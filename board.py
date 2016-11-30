@@ -10,6 +10,9 @@ from common import *
 pub = None  # type: paillier.PublicKey
 priv = None  # type: paillier.PrivateKey
 
+# Candidates running in the election
+candidates = ['dat boi', 'Shirls', 'RIPSEC']
+
 # Table containing vote results
 board = {}
 
@@ -91,7 +94,7 @@ class BoardHandler(RSACommandHandler):
                 and self.validate_zkp_in_set(vote):
 
             # Add the voter to the table if we haven't yet
-            voterkey = '{}:{}'.format(name, password)
+            voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
             if voterkey not in board:
                 board[voterkey] = {}
 
@@ -103,6 +106,12 @@ class BoardHandler(RSACommandHandler):
             board[voterkey][candidate] = vote
             return 'Vote accepted!'
         return 'Vote not accepted'
+
+
+def count_votes(cand):
+    votes = [board[voter][cand] for voter in board.keys() if cand in board[voter]]
+    result = priv.decrypt(sum(votes))
+    return cand, len(votes), result
 
 
 if __name__ == "__main__":
@@ -124,4 +133,17 @@ if __name__ == "__main__":
     raw_input('--- BEGIN VOTING PHASE ---')
 
     print '--- VOTING COMPLETE, COUNTING VOTES ---'
-    # do counting stuff here
+    results = map(count_votes, candidates)
+
+    print 'RESULTS\n------------'
+    total_votes = 0
+    total_results = 0
+    for cand, num_votes, result in results:
+        total_votes += num_votes
+        total_votes += result
+        print '{}: {}'.format(cand, result)
+    print '------------\nTotal votes cast: {}'.format(total_votes)
+
+    if total_votes != total_results:
+        print 'SOMETHING WENT WRONG'
+        print 'THE ELECTION WAS RIGGED'
