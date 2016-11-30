@@ -1,4 +1,12 @@
 import SocketServer, hashlib, sqlite3, threading
+from Crypto.PublicKey import RSA
+from ast import literal_eval
+import base64
+
+def genKey(nbits=2048):
+    return RSA.generate(nbits)
+
+key = genKey(2048)
 
 voterdb = sqlite3.connect("voters.db")
 cursor = voterdb.cursor()
@@ -12,11 +20,13 @@ except:
 voterdb.close()
 
 class VoterHandler(SocketServer.StreamRequestHandler):
+    
     def sql(self, query, args=None):
         if args:
             return self.cursor.execute(query, args)
         else:
             return self.cursor.execute(query)
+
     def salt(self, password):
         return 'whyso' + password + 'salty'
 
@@ -35,23 +45,34 @@ class VoterHandler(SocketServer.StreamRequestHandler):
 
         return "Successfully registered"
 
+    def send(self, data):
+        self.wfile.write(data)
 
     def handle(self):
         self.voterdb = sqlite3.connect("voters.db")
         self.cursor = self.voterdb.cursor()
-    
-        self.data = self.rfile.readline().strip()
         
-        if "REGISTER " in self.data:
-            info = self.data.split(' ')
-            try:
-                self.wfile.write(self.register(info[1], info[2]))
-            except:
-                self.wfile.write("REGISTER [username] [password]")
-        
-        else:
-            self.wfile.write("Options: REGISTER")
+        self.send(str(key.e) + ',' + str(key.n))
+        while True:
+            self.data = base64.b64decode(self.rfile.readline().strip())
+            dec = key.decrypt(self.data).strip()
+            args = dec.split(' ')
+            command = args[0]
 
+            if command == "REGISTER":
+                try:
+                    self.send(self.register(args[1], args[2]))
+                except:
+                    self.send("REGISTER [username] [password]")
+            
+            elif command == "KEY":
+                self.send(str(key.e) + ',' + str(key.n))
+
+            elif command == "QUIT":
+                break
+
+            else:
+                self.send("Options: REGISTER, KEY, QUIT")
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
@@ -62,4 +83,3 @@ SocketServer.TCPServer.allow_reuse_address = True
 server = ThreadedTCPServer((HOST, PORT), VoterHandler)
 
 server.serve_forever()
-
