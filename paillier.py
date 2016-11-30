@@ -13,6 +13,9 @@ class PublicKey:
         self.g = n + 1
 
     def encrypt(self, ptxt):
+        if not isinstance(ptxt, (int, long)):
+            raise TypeError('Plaintext must be a number')
+
         r = getRandomRange(2, self.n)
         ctxt = (pow(self.g, ptxt, self.n_squared) * pow(r, self.n, self.n_squared)) % self.n_squared
         return EncryptedMessage(self, r, ctxt)
@@ -29,13 +32,19 @@ class PublicKey:
 class PrivateKey:
     def __init__(self, pub, p, q):
         self.pub = pub
-        self.lmbda = (p - 1) * (q - 1)
-        self.mu = inverse(self.lmbda, pub.n)
+        self.lm = (p - 1) * (q - 1)
+        self.mu = inverse(self.lm, pub.n)
 
-    def decrypt(self, ctxt):
-        if isinstance(ctxt, EncryptedMessage):
-            ctxt = ctxt.ctxt if ctxt.pub == self.pub else 0
-        return (((pow(ctxt, self.lmbda, self.pub.n_squared) - 1) / self.pub.n) * self.mu) % self.pub.n
+    def decrypt(self, c):
+        if isinstance(c, EncryptedMessage):
+            if c.pub != self.pub:
+                raise ValueError("Public keys don't match")
+            c = c.ctxt
+
+        if not isinstance(c, (int, long)):
+            raise TypeError('Ciphertext must be a number')
+
+        return (((pow(c, self.lm, self.pub.n_squared) - 1) / self.pub.n) * self.mu) % self.pub.n
 
 
 class EncryptedMessage:
@@ -48,7 +57,7 @@ class EncryptedMessage:
         res = None
         if isinstance(other, EncryptedMessage):
             if self.pub != other.pub:
-                return None
+                raise ValueError("Public keys don't match")
             res = (self.ctxt * other.ctxt) % self.pub.n_squared
         elif isinstance(other, int):
             res = (self.ctxt * pow(self.pub.g, other, self.pub.n_squared)) % self.pub.n_squared
@@ -58,7 +67,7 @@ class EncryptedMessage:
         res = None
         if isinstance(other, EncryptedMessage):
             if self.pub != other.pub:
-                return None
+                raise ValueError("Public keys don't match")
             res = self.ctxt + inverse(other.ctxt, self.pub.n_squared)
         elif isinstance(other, int):
             res = self.ctxt + inverse(other, self.pub.n_squared)
@@ -68,7 +77,7 @@ class EncryptedMessage:
         res = None
         if isinstance(other, EncryptedMessage):
             if self.pub != other.pub:
-                return None
+                raise ValueError("Public keys don't match")
             res = pow(self.ctxt, other.ctxt, self.pub.n_squared)
         elif isinstance(other, int):
             res = pow(self.ctxt, other, self.pub.n_squared)
