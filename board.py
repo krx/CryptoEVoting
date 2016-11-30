@@ -26,24 +26,6 @@ reg_pub = parse_res(reg_sock.recvline())
 reg_pub = RSA.construct((long(reg_pub['n']), long(reg_pub['e'])))
 
 
-# class Board:
-#     def __init__(self):
-#         pass
-#
-#     # Is the sum of the votes 1
-#     def validateRowTotal(self):
-#         pass
-#
-#     # Is the vote in the set {0, 1}?
-#     # Has the vote been tampered with?
-#     # Using ZKP
-#     def validateVote(self):
-#         pass
-#
-#     def addVoteToTable(self):
-#         pass
-
-
 class BoardHandler(RSACommandHandler):
     reg_open = False
 
