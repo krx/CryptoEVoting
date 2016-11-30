@@ -18,7 +18,7 @@ class PublicKey:
 
         r = getRandomRange(2, self.n)
         ctxt = (pow(self.g, ptxt, self.n_squared) * pow(r, self.n, self.n_squared)) % self.n_squared
-        return EncryptedMessage(self, r, ctxt)
+        return EncryptedMessage(self, ctxt, r)
 
     def __eq__(self, other):
         if isinstance(other, PublicKey):
