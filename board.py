@@ -13,6 +13,15 @@ priv = None  # type: paillier.PrivateKey
 # Table containing vote results
 board = {}
 
+# Connect to the registrar
+reg_sock = RSASocket(socket.AF_INET, socket.SOCK_STREAM)
+reg_sock.connect((HOST, PORT_REGISTRAR))
+
+# Get its key
+reg_sock.send(make_cmd('KEY'))
+reg_pub = parse_res(reg_sock.recvline())
+reg_pub = RSA.construct((long(reg_pub['n']), long(reg_pub['e'])))
+
 
 # class Board:
 #     def __init__(self):
@@ -44,12 +53,56 @@ class BoardHandler(RSACommandHandler):
 
         self.add_cmd('vote', self.attempt_vote)
 
+    def validate_signature(self, vote, signed):
+        return vote == pow(signed, reg_pub.e, reg_pub.n)
+
+    def validate_voter(self, name, password):
+        reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
+        res = parse_res(reg_sock.recvline())
+        # ???
+
+    def validate_candidate(self, candidat):
+        pass
+
+    def validate_zkp_knowledge(self, vote):
+        pass
+
+    def validate_zkp_in_set(self, vote):
+        pass
+
     def attempt_vote(self, args):
         if self.reg_open:
             # Not allowed to vote yet
-            return
+            return 'The election is not currently running'
 
-        print args
+        try:
+            name = args['name']
+            password = args['password']
+            candidate = args['candidate']
+            vote = args['vote']
+            sig = args['signature']
+        except KeyError:
+            return 'VOTE usage: [name] [password] [candidate] [vote] [signature]'
+
+        if self.validate_voter(name, password) \
+                and self.validate_signature(vote, sig) \
+                and self.validate_candidate(candidate) \
+                and self.validate_zkp_knowledge(vote) \
+                and self.validate_zkp_in_set(vote):
+
+            # Add the vote to the table if we haven't yet
+            voterkey = '{}:{}'.format(name, password)
+            if voterkey not in board:
+                board[voterkey] = {}
+
+            if candidate in board[voterkey]:
+                # A vote has already been cast for this candidate
+                return 'Vote not accepted'
+
+            # All checks passed
+            board[voterkey][candidate] = vote
+            return 'Vote accepted!'
+        return 'Vote not accepted'
 
 
 if __name__ == "__main__":
