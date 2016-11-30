@@ -1,7 +1,5 @@
-import SocketServer, hashlib, sqlite3, threading
+import SocketServer, hashlib, sqlite3, threading, base64, json
 from Crypto.PublicKey import RSA
-from ast import literal_eval
-import base64
 
 def genKey(nbits=2048):
     return RSA.generate(nbits)
@@ -35,7 +33,7 @@ class VoterHandler(SocketServer.StreamRequestHandler):
         if self.sql("select name from voters where name=?",(name,)).fetchone() != None:
             return "Name already registered\n"
         
-        voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())
+        voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest()) #hash(salt(pass))
         print voterinfo
         self.sql("insert into voters values (?,?)", voterinfo)
         self.voterdb.commit()
@@ -44,6 +42,13 @@ class VoterHandler(SocketServer.StreamRequestHandler):
             print row
 
         return "Successfully registered"
+
+    def sign(self, name, password, vote):
+        password = hashlib.sha256(self.salt(password)).hexdigest()
+        if self.sql("select name from voters where name=? and password=?",(name,password,)).fetchone() != None:
+            return str(pow(int(vote), key.d, key.n))
+        else:
+            return "Incorrect Login Details"
 
     def send(self, data):
         self.wfile.write(data)
@@ -56,23 +61,32 @@ class VoterHandler(SocketServer.StreamRequestHandler):
         while True:
             self.data = base64.b64decode(self.rfile.readline().strip())
             dec = key.decrypt(self.data).strip()
-            args = dec.split(' ')
-            command = args[0]
+            jstr = json.loads(dec)
+            print jstr
+            command = jstr['command']
+
 
             if command == "REGISTER":
                 try:
-                    self.send(self.register(args[1], args[2]))
+                    self.send(self.register(jstr['name'], jstr['password']))
                 except:
-                    self.send("REGISTER [username] [password]")
+                    self.send("REGISTER [name] [password]")
             
             elif command == "KEY":
                 self.send(str(key.e) + ',' + str(key.n))
 
             elif command == "QUIT":
                 break
+            
+            elif command == "SIGN":
+                #try:
+                print "sign"
+                self.send(self.sign(jstr['name'], jstr['password'], jstr['vote']))
+                #except:
+                #    self.send("SIGN [name] [password] [vote]")
 
             else:
-                self.send("Options: REGISTER, KEY, QUIT")
+                self.send("Options: KEY, QUIT, REGISTER, SIGN")
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
