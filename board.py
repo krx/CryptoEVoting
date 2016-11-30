@@ -64,11 +64,10 @@ class BoardHandler(RSACommandHandler):
 
     def validate_voter(self, name, password):
         reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
-        res = parse_res(reg_sock.recvline())
-        # ???
+        return parse_res(reg_sock.recvline())  # TODO: assuming this is a bool, change if needed
 
-    def validate_candidate(self, candidat):
-        pass
+    def validate_candidate(self, candidate):
+        return candidate in candidates
 
     def validate_zkp_knowledge(self, vote):
         pass
