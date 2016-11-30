@@ -9,15 +9,15 @@ from Crypto.Util.number import inverse, getStrongPrime, getRandomRange
 class PublicKey:
     def __init__(self, n):
         self.n = n
-        self.n_squared = n * n
-        self.g = n + 1
+        self.n_sq = n * n
+        self.g = n + 1  # Works because p, q are the same size
 
     def encrypt(self, ptxt):
         if not isinstance(ptxt, (int, long)):
             raise TypeError('Plaintext must be a number')
 
         r = getRandomRange(2, self.n)
-        ctxt = (pow(self.g, ptxt, self.n_squared) * pow(r, self.n, self.n_squared)) % self.n_squared
+        ctxt = (pow(self.g, ptxt, self.n_sq) * pow(r, self.n, self.n_sq)) % self.n_sq
         return EncryptedMessage(self, ctxt, r)
 
     def __eq__(self, other):
@@ -44,7 +44,7 @@ class PrivateKey:
         if not isinstance(c, (int, long)):
             raise TypeError('Ciphertext must be a number')
 
-        return (((pow(c, self.lm, self.pub.n_squared) - 1) / self.pub.n) * self.mu) % self.pub.n
+        return (((pow(c, self.lm, self.pub.n_sq) - 1) / self.pub.n) * self.mu) % self.pub.n
 
 
 class EncryptedMessage:
@@ -58,11 +58,13 @@ class EncryptedMessage:
         if isinstance(other, EncryptedMessage):
             if self.pub != other.pub:
                 raise ValueError("Public keys don't match")
+            # To add two ctxts we just multiply them together
             add_val = other.ctxt
         elif isinstance(other, (int, long)):
-            add_val = pow(self.pub.g, other % self.pub.n_squared, self.pub.n_squared)
+            # To add an int k, we multiply by g^k
+            add_val = pow(self.pub.g, other % self.pub.n_sq, self.pub.n_sq)
 
-        return EncryptedMessage(self.pub, (self.ctxt * add_val) % self.pub.n_squared)
+        return EncryptedMessage(self.pub, (self.ctxt * add_val) % self.pub.n_sq)
 
     def __radd__(self, other):
         return self + other
@@ -74,7 +76,7 @@ class EncryptedMessage:
         if not isinstance(other, (int, long)):
             raise TypeError('Encrypted message must be multiplied by a number')
 
-        return EncryptedMessage(self.pub, pow(self.ctxt, other % self.pub.n_squared, self.pub.n_squared))
+        return EncryptedMessage(self.pub, pow(self.ctxt, other % self.pub.n_sq, self.pub.n_sq))
 
     def __rmul__(self, other):
         return self * other
@@ -84,6 +86,15 @@ class EncryptedMessage:
 
 
 def gen_keypair(nbits=2048):
+    """ Generates a public/private key pair for Paillier encryption
+
+    Args:
+        nbits (int): Desired bit length of the modulus
+
+    Returns:
+        pub (PublicKey): Public key used for encryption
+        priv (PrivateKey): Private key associated with the public key, used for decryption
+    """
     p = getStrongPrime(nbits / 2)
     q = getStrongPrime(nbits / 2)
     pub = PublicKey(p * q)
