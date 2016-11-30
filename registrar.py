@@ -1,25 +1,16 @@
-import SocketServer
-import base64
 import hashlib
-import json
 import sqlite3
-
-from Crypto.PublicKey import RSA
+from SocketServer import ThreadingTCPServer
 
 from common import *
 
-
-def genKey(nbits=2048):
-    return RSA.generate(nbits)
-
-
-key = genKey(2048)
+reg_key = RSA.generate(2048)
 
 voterdb = sqlite3.connect("voters.db")
 cursor = voterdb.cursor()
 
 try:
-    cursor.execute("create table voters (name text, password text)")
+    cursor.execute("CREATE TABLE voters (name TEXT, password TEXT)")
     voterdb.commit()
 except:
     pass
@@ -27,7 +18,12 @@ except:
 voterdb.close()
 
 
-class VoterHandler(SocketServer.StreamRequestHandler):
+class VoterHandler(RSACommandHandler):
+    def init_commands(self):
+        self.add_cmd('REGISTER', self.register)
+        self.add_cmd('SIGN', self.sign)
+        self.add_cmd('KEY', lambda _: {'e': reg_key.e, 'n': reg_key.n})
+
     def sql(self, query, args=None):
         if args:
             return self.cursor.execute(query, args)
@@ -37,9 +33,14 @@ class VoterHandler(SocketServer.StreamRequestHandler):
     def salt(self, password):
         return 'whyso' + password + 'salty'
 
-    def register(self, name, password):
+    def register(self, args):
+        try:
+            name = args['name']
+            password = args['password']
+        except KeyError:
+            return 'REGISTER [name] [password]'
 
-        if self.sql("select name from voters where name=?", (name,)).fetchone() != None:
+        if self.sql("select name from voters where name=?", (name,)).fetchone() is not None:
             return "Name already registered\n"
 
         voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
@@ -51,56 +52,27 @@ class VoterHandler(SocketServer.StreamRequestHandler):
 
         return "Successfully registered"
 
-    def sign(self, name, password, vote):
+    def sign(self, args):
+        try:
+            name = args['name']
+            password = args['password']
+            vote = args['vote']
+        except KeyError:
+            return 'SIGN [name] [password] [vote]'
+
         password = hashlib.sha256(self.salt(password)).hexdigest()
-        if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() != None:
-            return str(pow(int(vote), key.d, key.n))
+        if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() is not None:
+            return str(pow(vote, reg_key.d, reg_key.n))
         else:
             return "Incorrect Login Details"
 
-    def send(self, data):
-        self.wfile.write(data)
-
-    def handle(self):
+    def setup(self):
+        RSACommandHandler.setup(self)
         self.voterdb = sqlite3.connect("voters.db")
         self.cursor = self.voterdb.cursor()
 
-        self.send(str(key.e) + ',' + str(key.n))
-        while True:
-            self.data = base64.b64decode(self.rfile.readline().strip())
-            dec = key.decrypt(self.data).strip()
-            jstr = json.loads(dec)
-            print jstr
-            command = jstr['command']
 
-            if command == "REGISTER":
-                try:
-                    self.send(self.register(jstr['name'], jstr['password']))
-                except:
-                    self.send("REGISTER [name] [password]")
-
-            elif command == "KEY":
-                self.send(str(key.e) + ',' + str(key.n))
-
-            elif command == "QUIT":
-                break
-
-            elif command == "SIGN":
-                # try:
-                print "sign"
-                self.send(self.sign(jstr['name'], jstr['password'], jstr['vote']))
-                # except:
-                #    self.send("SIGN [name] [password] [vote]")
-
-            else:
-                self.send("Options: KEY, QUIT, REGISTER, SIGN")
-
-
-class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    pass
-
-
-SocketServer.TCPServer.allow_reuse_address = True
-server = ThreadedTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
+ThreadingTCPServer.allow_reuse_address = True
+server = ThreadingTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
 
 server.serve_forever()
