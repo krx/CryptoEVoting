@@ -32,7 +32,7 @@ board = {}
 #         pass
 
 
-class BoardHandler(CommandHandler):
+class BoardHandler(RSACommandHandler):
     reg_open = False
 
     def init_commands(self):
