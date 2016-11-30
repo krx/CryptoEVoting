@@ -3,7 +3,7 @@
 Simple Paillier encryption library
 """
 
-from Crypto.Util.number import inverse, getStrongPrime, getRandomRange
+from Crypto.Util.number import inverse, getStrongPrime, getRandomRange, GCD
 
 
 class PublicKey:
@@ -17,6 +17,8 @@ class PublicKey:
             raise TypeError('Plaintext must be a number')
 
         r = getRandomRange(2, self.n)
+        while GCD(r, self.n) != 1:
+            r = getRandomRange(2, self.n)
         ctxt = (pow(self.g, ptxt, self.n_sq) * pow(r, self.n, self.n_sq)) % self.n_sq
         return EncryptedMessage(self, ctxt, r)
 
