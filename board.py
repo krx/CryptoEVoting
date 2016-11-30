@@ -37,12 +37,12 @@ class BoardHandler(RSACommandHandler):
 
     def init_commands(self):
         # Is registration currently allowed?
-        self.commands['regopen'] = lambda _: self.reg_open
+        self.add_cmd('regopen', lambda _: self.reg_open)
 
         # Get the public key (modulus)
-        self.commands['pubkey'] = lambda _: pub.n
+        self.add_cmd('pubkey', lambda _: pub.n)
 
-        self.commands['vote'] = self.attempt_vote
+        self.add_cmd('vote', self.attempt_vote)
 
     def attempt_vote(self, args):
         if self.reg_open:

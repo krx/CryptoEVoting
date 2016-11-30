@@ -16,12 +16,18 @@ PORT_BOARD = 9002
 class CommandHandler(StreamRequestHandler):
     def __init__(self, request, client_address, server):
         self.running = True
-        self.commands = {'quit': lambda _: setattr(self, 'running', False)}
+        self.commands = {}
+
+        self.add_cmd('quit', lambda _: setattr(self, 'running', False))
         self.init_commands()
+
         StreamRequestHandler.__init__(self, request, client_address, server)
 
     def init_commands(self):
         raise NotImplementedError('Define commands for this handler')
+
+    def add_cmd(self, cmd, func):
+        self.commands[cmd.upper()] = func
 
     def println(self, s=''):
         self.wfile.write('{}\n'.format(s))
@@ -33,11 +39,12 @@ class CommandHandler(StreamRequestHandler):
     def process_cmd(self):
         try:
             cmd = json.loads(self.input())
+            print cmd
             assert 'command' in cmd and 'args' in cmd
             res = self.commands[cmd['command']](cmd['args'])
-            self.println(json.dumps({'res': res}))
+            self.println(make_res(res))
         except:
-            self.println('Invalid input')
+            self.println(make_res('Options: {}'.format(', '.join(self.commands.keys()))))
 
     def handle(self):
         while self.running:
@@ -100,6 +107,14 @@ class RSASocket(Socket):
 
 def make_cmd(cmd, args=None):
     return json.dumps({
-        'command': cmd.lower(),
+        'command': cmd.upper(),
         'args': args or {}
     })
+
+
+def make_res(res):
+    return json.dumps({'res': res})
+
+
+def parse_res(res):
+    return json.loads(res)['res']
