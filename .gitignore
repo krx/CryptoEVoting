@@ -1,1 +1,3 @@
 voters.db
+*.pyc
+*.swp
