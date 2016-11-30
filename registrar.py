@@ -23,6 +23,7 @@ class VoterHandler(RSACommandHandler):
         self.add_cmd('REGISTER', self.register)
         self.add_cmd('SIGN', self.sign)
         self.add_cmd('KEY', lambda _: {'e': reg_key.e, 'n': reg_key.n})
+        self.add_cmd('USER', self.userexists)
 
     def sql(self, query, args=None):
         if args:
@@ -34,13 +35,15 @@ class VoterHandler(RSACommandHandler):
         return 'whyso' + password + 'salty'
 
     def register(self, args):
+        name = None
+        password = None
         try:
             name = args['name']
             password = args['password']
         except KeyError:
             return 'REGISTER [name] [password]'
-
-        if self.sql("select name from voters where name=?", (name,)).fetchone() is not None:
+        print name
+        if self.userexists(name):
             return "Name already registered\n"
 
         voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
@@ -65,6 +68,11 @@ class VoterHandler(RSACommandHandler):
             return str(pow(vote, reg_key.d, reg_key.n))
         else:
             return "Incorrect Login Details"
+
+    def userexists(self, name):
+        if self.sql("select name from voters where name=?", (name,)).fetchone() is not None:
+            return True
+        return False
 
     def setup(self):
         RSACommandHandler.setup(self)
