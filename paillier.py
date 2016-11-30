@@ -54,34 +54,33 @@ class EncryptedMessage:
         self.rand_num = r
 
     def __add__(self, other):
-        res = None
+        add_val = 1
         if isinstance(other, EncryptedMessage):
             if self.pub != other.pub:
                 raise ValueError("Public keys don't match")
-            res = (self.ctxt * other.ctxt) % self.pub.n_squared
-        elif isinstance(other, int):
-            res = (self.ctxt * pow(self.pub.g, other, self.pub.n_squared)) % self.pub.n_squared
-        return EncryptedMessage(self.pub, res)
+            add_val = other.ctxt
+        elif isinstance(other, (int, long)):
+            add_val = pow(self.pub.g, other % self.pub.n_squared, self.pub.n_squared)
+
+        return EncryptedMessage(self.pub, (self.ctxt * add_val) % self.pub.n_squared)
+
+    def __radd__(self, other):
+        return self + other
 
     def __sub__(self, other):
-        res = None
-        if isinstance(other, EncryptedMessage):
-            if self.pub != other.pub:
-                raise ValueError("Public keys don't match")
-            res = self.ctxt + inverse(other.ctxt, self.pub.n_squared)
-        elif isinstance(other, int):
-            res = self.ctxt + inverse(other, self.pub.n_squared)
-        return res
+        return self + -other
 
     def __mul__(self, other):
-        res = None
-        if isinstance(other, EncryptedMessage):
-            if self.pub != other.pub:
-                raise ValueError("Public keys don't match")
-            res = pow(self.ctxt, other.ctxt, self.pub.n_squared)
-        elif isinstance(other, int):
-            res = pow(self.ctxt, other, self.pub.n_squared)
-        return EncryptedMessage(self.pub, res)
+        if not isinstance(other, (int, long)):
+            raise TypeError('Encrypted message must be multiplied by a number')
+
+        return EncryptedMessage(self.pub, pow(self.ctxt, other % self.pub.n_squared, self.pub.n_squared))
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __neg__(self):
+        return self * -1
 
 
 def gen_keypair(nbits=2048):
