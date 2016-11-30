@@ -54,6 +54,9 @@ class BoardHandler(RSACommandHandler):
         # Get the public key (modulus)
         self.add_cmd('pubkey', lambda _: pub.n)
 
+        # Get list of candidates
+        self.add_cmd('candidates', lambda _: candidates)
+
         self.add_cmd('vote', self.attempt_vote)
 
     def validate_signature(self, vote, signed):
