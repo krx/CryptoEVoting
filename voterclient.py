@@ -1,11 +1,14 @@
-import socket, base64, json, hashlib
+import base64
+import hashlib
+import json
+import socket
+
 from Crypto.PublicKey import RSA
 
-
-
+from common import *
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("localhost", 1337))
+s.connect((HOST, PORT_REGISTRAR))
 
 recvd = s.recv(2048).strip().split(',')
 

@@ -1,8 +1,17 @@
-import SocketServer, hashlib, sqlite3, threading, base64, json
+import SocketServer
+import base64
+import hashlib
+import json
+import sqlite3
+
 from Crypto.PublicKey import RSA
+
+from common import *
+
 
 def genKey(nbits=2048):
     return RSA.generate(nbits)
+
 
 key = genKey(2048)
 
@@ -17,8 +26,8 @@ except:
 
 voterdb.close()
 
+
 class VoterHandler(SocketServer.StreamRequestHandler):
-    
     def sql(self, query, args=None):
         if args:
             return self.cursor.execute(query, args)
@@ -29,11 +38,11 @@ class VoterHandler(SocketServer.StreamRequestHandler):
         return 'whyso' + password + 'salty'
 
     def register(self, name, password):
-        
-        if self.sql("select name from voters where name=?",(name,)).fetchone() != None:
+
+        if self.sql("select name from voters where name=?", (name,)).fetchone() != None:
             return "Name already registered\n"
-        
-        voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest()) #hash(salt(pass))
+
+        voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
         print voterinfo
         self.sql("insert into voters values (?,?)", voterinfo)
         self.voterdb.commit()
@@ -45,7 +54,7 @@ class VoterHandler(SocketServer.StreamRequestHandler):
 
     def sign(self, name, password, vote):
         password = hashlib.sha256(self.salt(password)).hexdigest()
-        if self.sql("select name from voters where name=? and password=?",(name,password,)).fetchone() != None:
+        if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() != None:
             return str(pow(int(vote), key.d, key.n))
         else:
             return "Incorrect Login Details"
@@ -56,7 +65,7 @@ class VoterHandler(SocketServer.StreamRequestHandler):
     def handle(self):
         self.voterdb = sqlite3.connect("voters.db")
         self.cursor = self.voterdb.cursor()
-        
+
         self.send(str(key.e) + ',' + str(key.n))
         while True:
             self.data = base64.b64decode(self.rfile.readline().strip())
@@ -65,35 +74,34 @@ class VoterHandler(SocketServer.StreamRequestHandler):
             print jstr
             command = jstr['command']
 
-
             if command == "REGISTER":
                 try:
                     self.send(self.register(jstr['name'], jstr['password']))
                 except:
                     self.send("REGISTER [name] [password]")
-            
+
             elif command == "KEY":
                 self.send(str(key.e) + ',' + str(key.n))
 
             elif command == "QUIT":
                 break
-            
+
             elif command == "SIGN":
-                #try:
+                # try:
                 print "sign"
                 self.send(self.sign(jstr['name'], jstr['password'], jstr['vote']))
-                #except:
+                # except:
                 #    self.send("SIGN [name] [password] [vote]")
 
             else:
                 self.send("Options: KEY, QUIT, REGISTER, SIGN")
 
+
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 
-HOST, PORT = "localhost", 1337
 
 SocketServer.TCPServer.allow_reuse_address = True
-server = ThreadedTCPServer((HOST, PORT), VoterHandler)
+server = ThreadedTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
 
 server.serve_forever()
