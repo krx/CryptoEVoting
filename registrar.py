@@ -43,7 +43,6 @@ class VoterHandler(SocketServer.StreamRequestHandler):
             return "Name already registered\n"
 
         voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
-        print voterinfo
         self.sql("insert into voters values (?,?)", voterinfo)
         self.voterdb.commit()
 
