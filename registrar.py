@@ -71,8 +71,8 @@ class VoterHandler(RSACommandHandler):
         self.voterdb = sqlite3.connect("voters.db")
         self.cursor = self.voterdb.cursor()
 
+if __name__ == '__main__':
+    ThreadingTCPServer.allow_reuse_address = True
+    server = ThreadingTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
 
-ThreadingTCPServer.allow_reuse_address = True
-server = ThreadingTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
-
-server.serve_forever()
+    server.serve_forever()
