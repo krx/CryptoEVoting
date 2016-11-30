@@ -90,7 +90,7 @@ class BoardHandler(RSACommandHandler):
                 and self.validate_zkp_knowledge(vote) \
                 and self.validate_zkp_in_set(vote):
 
-            # Add the vote to the table if we haven't yet
+            # Add the voter to the table if we haven't yet
             voterkey = '{}:{}'.format(name, password)
             if voterkey not in board:
                 board[voterkey] = {}
