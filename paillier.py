@@ -1,20 +1,18 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 """
 Simple Paillier encryption library
 """
-
-from typing import Tuple
 
 from Crypto.Util.number import inverse, getStrongPrime, getRandomRange
 
 
 class PublicKey:
-    def __init__(self, n: int):
+    def __init__(self, n):
         self.n = n
         self.n_squared = n * n
         self.g = n + 1
 
-    def encrypt(self, ptxt: int) -> EncryptedMessage:
+    def encrypt(self, ptxt):
         r = getRandomRange(2, self.n)
         ctxt = (pow(self.g, ptxt, self.n_squared) * pow(r, self.n, self.n_squared)) % self.n_squared
         return EncryptedMessage(self, r, ctxt)
@@ -29,19 +27,19 @@ class PublicKey:
 
 
 class PrivateKey:
-    def __init__(self, pub: PublicKey, p: int, q: int):
+    def __init__(self, pub, p, q):
         self.pub = pub
         self.lmbda = (p - 1) * (q - 1)
         self.mu = inverse(self.lmbda, pub.n)
 
-    def decrypt(self, ctxt) -> int:
+    def decrypt(self, ctxt):
         if isinstance(ctxt, EncryptedMessage):
             ctxt = ctxt.ctxt if ctxt.pub == self.pub else 0
-        return (((pow(ctxt, self.lmbda, self.pub.n_squared) - 1) // self.pub.n) * self.mu) % self.pub.n
+        return (((pow(ctxt, self.lmbda, self.pub.n_squared) - 1) / self.pub.n) * self.mu) % self.pub.n
 
 
 class EncryptedMessage:
-    def __init__(self, pub: PublicKey, ctxt: int, r=None):
+    def __init__(self, pub, ctxt, r=None):
         self.pub = pub
         self.ctxt = ctxt
         self.rand_num = r
@@ -77,8 +75,8 @@ class EncryptedMessage:
         return EncryptedMessage(self.pub, res)
 
 
-def gen_keypair(nbits=2048) -> Tuple[PublicKey, PrivateKey]:
-    p = getStrongPrime(nbits // 2)
-    q = getStrongPrime(nbits // 2)
+def gen_keypair(nbits=2048):
+    p = getStrongPrime(nbits / 2)
+    q = getStrongPrime(nbits / 2)
     pub = PublicKey(p * q)
     return pub, PrivateKey(pub, p, q)
