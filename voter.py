@@ -67,7 +67,7 @@ def login_voter():
         'name': raw_input('Enter name: '),
         'password': sha256(raw_input('Enter password: ')).hexdigest()
     }
-    reg.send(make_cmd('register', args))
+    reg.send(make_cmd('user', args))
 
     # Save info if successful
     if parse_res(reg.recvline()):
