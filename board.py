@@ -47,7 +47,7 @@ class BoardHandler(RSACommandHandler):
     def validate_candidate(self, candidate):
         return candidate in candidates
 
-    def validate_zkp_knowledge(self, vote, know_A = 1000):
+    def validate_zkp_knowledge(self, vote, know_A=1000):
         # receive u
         know_u = long(input()) % vote.pub.n_sq
         # 3 rounds, A = 1000, p_valid = 1/(1000^3)
@@ -56,8 +56,8 @@ class BoardHandler(RSACommandHandler):
         # send e
         self.println(know_e)
         know_vw = input()
-        know_v, know_w = know_vm.strip().split(',')
-        test = (vote.pub.g**know_v*vote.ctxt**know_e*know_w**vote.pub.N) % vote.pub.n_sq
+        know_v, know_w = know_vw.strip().split(',')
+        test = (vote.pub.g ** know_v * vote.ctxt ** know_e * know_w ** vote.pub.N) % vote.pub.n_sq
 
         if know_u == test:
             self.println("PASS")

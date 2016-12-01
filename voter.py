@@ -91,7 +91,7 @@ def sign_vote(vote):
 
 
 def zkp_prove_knowledge(evote, pvote):
-    # type: (paillier.EncryptedMessage), (long) -> bool
+    # type: (paillier.EncryptedMessage, long) -> bool
 
     # choose r in Zn
     know_r = getRandomRange(0, evote.pub.n)
@@ -100,7 +100,7 @@ def zkp_prove_knowledge(evote, pvote):
     while GCD(know_s, evote.pub.n) != 1:
         know_s = getRandomRange(0, evote.pub.n)
     # calc u
-    know_u = (evote.pub.g**know_r*know_s**evote.pub.n) % evote.pub.n_sq
+    know_u = (evote.pub.g ** know_r * know_s ** evote.pub.n) % evote.pub.n_sq
     # send u
     board.send(str(know_u))
 
@@ -108,8 +108,8 @@ def zkp_prove_knowledge(evote, pvote):
     know_e = long(board.recvline())
 
     # calc v, w
-    know_v = (know_r - know_e*pvote) % evote.pub.n
-    know_w = (know_s*inverse(evote.rand_num, evote.pub.n)**know_e) % evote.pub.n
+    know_v = (know_r - know_e * pvote) % evote.pub.n
+    know_w = (know_s * inverse(evote.rand_num, evote.pub.n) ** know_e) % evote.pub.n
 
     board.send(str(know_v) + "," + str(know_w))
     result = board.recvline()
