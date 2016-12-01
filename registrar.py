@@ -43,7 +43,7 @@ class VoterHandler(RSACommandHandler):
         except KeyError:
             return 'REGISTER [name] [password]'
         print name
-        if self.userexists(name):
+        if self.userexists(args):
             return "Name already registered\n"
 
         voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
