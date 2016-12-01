@@ -69,8 +69,14 @@ class VoterHandler(RSACommandHandler):
         else:
             return "Incorrect Login Details"
 
-    def userexists(self, name):
-        if self.sql("select name from voters where name=?", (name,)).fetchone() is not None:
+    def userexists(self, args):
+        try:
+            name = args['name']
+            password = args['password']
+        except KeyError:
+            return 'USER [name] [password]'
+
+        if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() is not None:
             return True
         return False
 

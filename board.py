@@ -30,15 +30,9 @@ class BoardHandler(RSACommandHandler):
     reg_open = False
 
     def init_commands(self):
-        # Is registration currently allowed?
-        self.add_cmd('regopen', lambda _: self.reg_open)
-
-        # Get the public key (modulus)
-        self.add_cmd('pubkey', lambda _: pub.n)
-
-        # Get list of candidates
-        self.add_cmd('candidates', lambda _: candidates)
-
+        self.add_cmd('regopen', lambda _: self.reg_open)  # Is registration currently allowed?
+        self.add_cmd('pubkey', lambda _: pub.n)  # Get the public key (modulus)
+        self.add_cmd('candidates', lambda _: candidates)  # Get list of candidates
         self.add_cmd('vote', self.attempt_vote)
 
     def validate_signature(self, vote, signed):
