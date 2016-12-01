@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import hashlib
 
 from common import *
@@ -27,7 +28,7 @@ while True:
 """
 import Tkinter as tk
 import pygubu
-from tkinter import messagebox
+import tkMessageBox as messagebox
 
 class Application(pygubu.TkApplication):
     def _create_ui(self):
