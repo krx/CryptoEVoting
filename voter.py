@@ -147,6 +147,8 @@ def cast_vote():
 
 
 def close_and_quit():
+    reg.send(make_cmd('quit'))
+    board.send(make_cmd('quit'))
     reg.close()
     board.close()
     exit()
