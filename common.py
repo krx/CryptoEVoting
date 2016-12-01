@@ -191,7 +191,7 @@ class VoteGenerator:
             1. 110000010001100010
             2.   0000010001100010
             3. 000001 00011 00010
-            3.      1     3     2
+            4.      1     3     2
         Args:
             vote (long): Packed vote to unpack
 
