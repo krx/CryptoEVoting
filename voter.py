@@ -27,6 +27,9 @@ board.send(make_cmd('candidates'))
 candidates = parse_res(board.recvline())
 candidate_menu = '\n'.join(['{}) {}'.format(i + 1, cand) for i, cand in enumerate(candidates)])
 
+# Will be used to create votes
+vgen = VoteGenerator(len(candidates))
+
 # Keep track of the current user
 login_user = login_pass = None
 
@@ -49,22 +52,27 @@ def register_voter():
         print 'Registration is currently closed'
         return
 
+    # Attempt to register this voter
+    reg.send(make_cmd('register', {
+        'name': raw_input('Enter name: '),
+        'password': sha256(raw_input('Enter password: ')).hexdigest()
+    }))
+    print parse_res(reg.recvline())
+
+
+def login_voter():
+    global login_user, login_pass
+    # Attempt to login as this voter
     args = {
         'name': raw_input('Enter name: '),
         'password': sha256(raw_input('Enter password: ')).hexdigest()
     }
     reg.send(make_cmd('register', args))
-    res = parse_res(reg.recvline())
-    print res
 
-    if 'Success' in res:
+    # Save info if successful
+    if parse_res(reg.recvline()):
         login_user = args['name']
         login_pass = args['password']
-
-
-def login_voter():
-    global login_user, login_pass
-    pass
 
 
 def logout_voter():
@@ -85,8 +93,10 @@ def sign_vote(vote):
 
     # Get the signed vote and undo the blinding
     try:
-        return (parse_res(reg.recvline()) / blind_r) % reg_key.n
-    except ValueError:
+        signed = (parse_res(reg.recvline()) / blind_r) % reg_key.n
+        assert signed == vote.ctxt
+        return signed
+    except (ValueError, AssertionError):
         raise SignError()
 
 
@@ -131,6 +141,11 @@ def cast_vote():
         print 'The election is not currently running'
         return
 
+    # Update the vote generator if needed
+    if vgen.block_size is None:
+        reg.send(make_cmd('count'))
+        vgen.block_size = parse_res(reg.recvline())
+
     # Make sure we're logged in
     check_logged_in()
 
@@ -138,12 +153,15 @@ def cast_vote():
     print '\nSelect who you want to vote for:'
     while True:
         try:
-            candidate = candidates[int(raw_input('> ')) - 1]
-        except ValueError:
+            candidate = int(raw_input('> ')) - 1
+            assert 0 <= candidate < len(candidates)
+            break
+        except (ValueError, AssertionError):
             print 'Invalid choice'
 
-            # Get a signature on our vote
-            # sigvote = sign_vote()
+
+    # Get a signature on our vote
+    # sigvote = sign_vote()
 
 
 def close_and_quit():
