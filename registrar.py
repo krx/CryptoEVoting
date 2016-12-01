@@ -42,11 +42,11 @@ class VoterHandler(RSACommandHandler):
             password = args['password']
         except KeyError:
             return 'REGISTER [name] [password]'
-        print name
-        if self.userexists(args):
-            return "Name already registered\n"
 
         voterinfo = (name, hashlib.sha256(self.salt(password)).hexdigest())  # hash(salt(pass))
+        if self.userexists({'name': name, 'password': voterinfo[1]}):
+            return "Name already registered"
+
         self.sql("insert into voters values (?,?)", voterinfo)
         self.voterdb.commit()
 
