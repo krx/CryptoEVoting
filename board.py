@@ -6,6 +6,8 @@ from SocketServer import ThreadingTCPServer
 import paillier
 from common import *
 
+from Crypto.Util.number import getRandomRange
+
 # Paillier keys
 pub = None  # type: paillier.PublicKey
 priv = None  # type: paillier.PrivateKey
@@ -45,8 +47,24 @@ class BoardHandler(RSACommandHandler):
     def validate_candidate(self, candidate):
         return candidate in candidates
 
-    def validate_zkp_knowledge(self, vote):
-        pass
+    def validate_zkp_knowledge(self, vote, know_A = 1000):
+        # receive u
+        know_u = long(input()) % vote.pub.n_sq
+        # 3 rounds, A = 1000, p_valid = 1/(1000^3)
+        # self.println
+        know_e = getRandomRange(0, know_A)
+        # send e
+        self.println(know_e)
+        know_vw = input()
+        know_v, know_w = know_vm.strip().split(',')
+        test = (vote.pub.g**know_v*vote.ctxt**know_e*know_w**vote.pub.N) % vote.pub.n_sq
+
+        if know_u == test:
+            self.println("PASS")
+            return True
+
+        self.println("FAIL")
+        return False
 
     def validate_zkp_in_set(self, vote):
         pass

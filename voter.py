@@ -3,7 +3,7 @@
 import paillier
 from common import *
 from hashlib import sha256
-from Crypto.Util.number import getRandomRange
+from Crypto.Util.number import getRandomRange, GCD, inverse
 
 # Connect to registrar
 reg = RSASocket()
@@ -90,9 +90,33 @@ def sign_vote(vote):
         raise SignError()
 
 
-def zkp_prove_knowledge(vote):
-    # type: (paillier.EncryptedMessage) -> None
-    pass
+def zkp_prove_knowledge(evote, pvote):
+    # type: (paillier.EncryptedMessage), (long) -> bool
+
+    # choose r in Zn
+    know_r = getRandomRange(0, evote.pub.n)
+    # choose s in Zn star
+    know_s = getRandomRange(0, evote.pub.n)
+    while GCD(know_s, evote.pub.n) != 1:
+        know_s = getRandomRange(0, evote.pub.n)
+    # calc u
+    know_u = (evote.pub.g**know_r*know_s**evote.pub.n) % evote.pub.n_sq
+    # send u
+    board.send(str(know_u))
+
+    # receive e
+    know_e = long(board.recvline())
+
+    # calc v, w
+    know_v = (know_r - know_e*pvote) % evote.pub.n
+    know_w = (know_s*inverse(evote.rand_num, evote.pub.n)**know_e) % evote.pub.n
+
+    board.send(str(know_v) + "," + str(know_w))
+    result = board.recvline()
+    if result != "PASS":
+        return False
+
+    return True
 
 
 def zkp_prove_valid(vote):
