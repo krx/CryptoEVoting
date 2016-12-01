@@ -24,6 +24,7 @@ class VoterHandler(RSACommandHandler):
         self.add_cmd('SIGN', self.sign)
         self.add_cmd('KEY', lambda _: {'e': reg_key.e, 'n': reg_key.n})
         self.add_cmd('USER', self.userexists)
+        self.add_cmd('COUNT', self.user_count)
 
     def sql(self, query, args=None):
         if args:
@@ -79,6 +80,10 @@ class VoterHandler(RSACommandHandler):
         if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() is not None:
             return True
         return False
+
+    def user_count(self, args):
+        # TODO: idk if this sucks, negasora? :3
+        return self.sql("select name from voters where 1=1").arraysize()
 
     def setup(self):
         RSACommandHandler.setup(self)
