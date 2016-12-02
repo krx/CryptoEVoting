@@ -3,6 +3,7 @@
 from hashlib import sha256
 
 from Crypto.Util.number import getRandomRange, GCD, inverse
+import json
 
 import paillier
 from common import *
@@ -143,14 +144,14 @@ def zkp_prove_knowledge(evote, pvote):
     board.send(str(know_u))
 
     # receive e
-    know_e = long(board.recvline())
+    know_e = long(board.recvline().strip())
 
     # calc v, w
     know_v = (know_r - know_e * pvote) % evote.pub.n
     know_w = (know_s * inverse(evote.rand_num, evote.pub.n) ** know_e) % evote.pub.n
 
     board.send(str(know_v) + "," + str(know_w))
-    result = board.recvline()
+    result = board.recvline().strip()
     if result != "PASS":
         return False
 
@@ -180,23 +181,33 @@ def zkp_prove_valid(evote, pvote):
         v_j = getRandomRange(0, evote.pub.n)
         while GCD(v_j, evote.pub.n) != 1:
             v_j = getRandomRange(0, evote.pub.n)
-        vote_vs.append(v_j)
 
-        u_j = (v_j ** evote.pub.n * (evote.pub.g * inverse(evote.ctxt, evote.pub.n_sq)) ** e_j) % evote.pub.n_sq
+        vote_vs.append(float(v_j)
+
+        u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
         vote_us.append(u_j)
 
     # send u's
+    board.send(json.dumps(votes_us))
 
     # receive e
-    chal_e = 13224
+    chal_e = int(board.recvline().strip())
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
     vote_es[vote_i] = e_i
 
-    v_i = (ro * evote.rand_num ** e_i * evote.pub.g ** ((chal_e - sum(vote_es)) / evote.pub.n)) % evote.pub.n
+    v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/float(evote.pub.n)) % evote.pub.n
     vote_vs[vote_i] = v_i
 
     # send e,v
+    board.send(json.dumps({'e': vote_es, 'v': vote_vs}))
+
+    result = board.recvline().strip()
+
+    if result != "PASS":
+        return False
+
+    return True
 
 
 def cast_vote(gui=False, candidate=None):

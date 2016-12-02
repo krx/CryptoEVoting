@@ -8,6 +8,8 @@ from Crypto.Util.number import getRandomRange
 import paillier
 from common import *
 
+import json
+
 # Paillier keys
 pub = None  # type: paillier.PublicKey
 priv = None  # type: paillier.PrivateKey
@@ -64,8 +66,28 @@ class BoardHandler(SecureCommandHandler):
         self.println("FAIL")
         return False
 
-    def validate_zkp_in_set(self, vote):
+    def validate_zkp_in_set(self, vote, A = 1000):
         vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
+        u_raw = input()
+        u = json.loads(u)
+
+        e = getRandomRange(0, A)
+        self.println(e)
+
+        ev = input()
+        ev_dict = json.loads(ev)
+
+        es = ev_dict["e"]
+        vs = ev_dict["v"]
+
+        for j in xrange(self.votegen.num_cands):
+            if (vs[j]**vote.pub.n) % vote.pub.n_sq != (u[j]*(vote.ctxt*inverse(vote.pub.g**voter_set[j], vote.pub.n_sq))**es[j]) % vote.pub.n_sq:
+                self.println("FAIL")
+                return False
+
+        self.println("PASS")
+        return True
+
 
     def attempt_vote(self, args):
         if self.reg_open:
