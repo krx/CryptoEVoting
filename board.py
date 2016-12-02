@@ -45,9 +45,6 @@ class BoardHandler(RSACommandHandler):
         reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
         return parse_res(reg_sock.recvline())  # TODO: assuming this is a bool, change if needed
 
-    def validate_candidate(self, candidate):
-        return candidate in candidates
-
     def validate_zkp_knowledge(self, vote, know_A=1000):
         # receive u
         know_u = long(input()) % vote.pub.n_sq
@@ -78,29 +75,24 @@ class BoardHandler(RSACommandHandler):
         try:
             name = args['name']
             password = args['password']
-            candidate = args['candidate']
             vote = args['vote']
             sig = args['signature']
         except KeyError:
-            return 'VOTE usage: [name] [password] [candidate] [vote] [signature]'
+            return 'VOTE usage: [name] [password] [vote] [signature]'
 
         if self.validate_voter(name, password) \
                 and self.validate_signature(vote, sig) \
-                and self.validate_candidate(candidate) \
                 and self.validate_zkp_knowledge(vote) \
                 and self.validate_zkp_in_set(vote):
 
             # Add the voter to the table if we haven't yet
             voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
-            if voterkey not in board:
-                board[voterkey] = {}
-
-            if candidate in board[voterkey]:
-                # A vote has already been cast for this candidate
+            if voterkey in board:
+                # A vote has already been cast by this voter
                 return 'Vote not accepted'
 
             # All checks passed
-            board[voterkey][candidate] = vote
+            board[voterkey] = vote
             return 'Vote accepted!'
         return 'Vote not accepted'
 
@@ -132,17 +124,8 @@ if __name__ == "__main__":
     raw_input('--- BEGIN VOTING PHASE ---')
 
     print '--- VOTING COMPLETE, COUNTING VOTES ---'
-    results = map(count_votes, candidates)
+    results = zip(candidates, BoardHandler.votegen.parse(priv.decrypt(sum(board.values()))))
 
     print 'RESULTS\n------------'
-    total_votes = 0
-    total_results = 0
-    for cand, num_votes, result in results:
-        total_votes += num_votes
-        total_votes += result
+    for cand, result in results:
         print '{}: {}'.format(cand, result)
-    print '------------\nTotal votes cast: {}'.format(total_votes)
-
-    if total_votes != total_results:
-        print 'SOMETHING WENT WRONG'
-        print 'THE ELECTION WAS RIGGED'
