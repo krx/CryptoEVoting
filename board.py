@@ -3,10 +3,10 @@
 import thread
 from SocketServer import ThreadingTCPServer
 
+from Crypto.Util.number import getRandomRange
+
 import paillier
 from common import *
-
-from Crypto.Util.number import getRandomRange
 
 # Paillier keys
 pub = None  # type: paillier.PublicKey

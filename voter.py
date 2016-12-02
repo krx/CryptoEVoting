@@ -1,9 +1,11 @@
 #!/usr/bin/env python2
 
+from hashlib import sha256
+
+from Crypto.Util.number import getRandomRange, GCD, inverse
+
 import paillier
 from common import *
-from hashlib import sha256
-from Crypto.Util.number import getRandomRange, GCD, inverse
 
 # Connect to registrar
 reg = SecureSocket()
@@ -102,11 +104,12 @@ def logout_voter(gui=False):
     global login_user, login_pass
     login_user = login_pass = None
     return 'Logged out'
-   
+
+
 def sign_vote(vote):
     # type: (paillier.EncryptedMessage) -> long
     # Blind and send our encrypted vote
-    
+
     check_logged_in()
     blind_r = getRandomRange(2, reg_key.n)
     blinded_vote = (vote.ctxt * pow(blind_r, reg_key.e, reg_key.n)) % reg_key.n
@@ -168,18 +171,18 @@ def zkp_prove_valid(evote, pvote):
         if j == vote_i:
             vote_es.append(0)
             vote_vs.append(0)
-            vote_us.append((ro**evote.pub.n) % evote.pub.n_sq)
+            vote_us.append((ro ** evote.pub.n) % evote.pub.n_sq)
             continue
 
         e_j = getRandomRange(0, evote.pub.n)
-        votes_es.append(e_j)
+        vote_es.append(e_j)
 
         v_j = getRandomRange(0, evote.pub.n)
         while GCD(v_j, evote.pub.n) != 1:
             v_j = getRandomRange(0, evote.pub.n)
         vote_vs.append(v_j)
 
-        u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
+        u_j = (v_j ** evote.pub.n * (evote.pub.g * inverse(evote.ctxt, evote.pub.n_sq)) ** e_j) % evote.pub.n_sq
         vote_us.append(u_j)
 
     # send u's
@@ -190,7 +193,7 @@ def zkp_prove_valid(evote, pvote):
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
     vote_es[vote_i] = e_i
 
-    v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/evote.pub.n)) % evote.pub.n
+    v_i = (ro * evote.rand_num ** e_i * evote.pub.g ** ((chal_e - sum(vote_es)) / evote.pub.n)) % evote.pub.n
     vote_vs[vote_i] = v_i
 
     # send e,v
@@ -233,6 +236,7 @@ def close_and_quit(gui=False):
     reg.close()
     board.close()
     exit()
+
 
 if __name__ == '__main__':
     funcs = [

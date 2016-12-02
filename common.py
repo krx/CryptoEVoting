@@ -2,15 +2,16 @@
 Common variables/utilities shared between services
 """
 import base64
+import hashlib
 import json
 import socket
-import hashlib
 from SocketServer import StreamRequestHandler
-import AESHelper
 
-from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
+
+import AESHelper
 
 HOST = 'localhost'
 PORT_REGISTRAR = 9001
