@@ -107,35 +107,34 @@ class BoardHandler(SecureCommandHandler):
         except KeyError:
             return 'VOTE usage: [name] [password] [vote] [signature]'
 
-        # if self.validate_voter(name, password) \
-        #         and self.validate_signature(vote, sig) \
-        #         and self.validate_zkp_knowledge(vote) \
-        #         and self.validate_zkp_in_set(vote):
-        voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
-        if voterkey in board:
-            # A vote has already been cast by this voter
-            return 'Vote not accepted'
+        # Key that will by used in the board table
+        voterkey = '{}:{}'.format(name, password)
 
+        # Make sure this user exists and is logged in
         if not self.validate_voter(name, password):
             return 'Vote not accepted USER'
-        # print 'USER DONE'
+
+        # Validate the signature of the vote
         if not self.validate_signature(vote, sig):
             return 'Vote not accepted SIG'
-        # print 'SIG DONE'
-        for attempt in xrange(5):
-            # print attempt
+
+        # Check if a vote has already been cast by this voter
+        if voterkey in board:
+            return 'Vote not accepted DUPLICATE'
+
+        # Perform ZKP to show that the voter knows the content of the decrypted vote
+        for attempt in xrange(ZKP_ROUNDS):
             if not self.validate_zkp_knowledge(vote):
                 return 'Vote not accepted ZKP K'
-        # print 'ZKPK DONE'
-        for attempt in xrange(5):
-            # print attempt
+
+        # Perform ZKP to show that the vote lies within a given set of allowed votes
+        for attempt in xrange(ZKP_ROUNDS):
             if not self.validate_zkp_in_set(vote):
                 return 'Vote not accepted ZKP V'
 
         # All checks passed
         board[voterkey] = paillier.EncryptedMessage(pub, vote)
         return 'Vote accepted!'
-        # return 'Vote not accepted'
 
 
 if __name__ == "__main__":
@@ -168,8 +167,10 @@ if __name__ == "__main__":
         for cand, result in results:
             print '{}: {}'.format(cand, result)
 
+    # Done with the server, shut it down
     srv.shutdown()
 
     # Disconnect from registrar
     reg_sock.send(make_cmd('quit'))
     reg_sock.close()
+    exit()

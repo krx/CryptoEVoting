@@ -259,11 +259,11 @@ def cast_vote(gui=False, candidate=None):
 
     try:
         print 'Hmmm, lookin\' kinda shady...'
-        for attempt in xrange(5):
+        for attempt in xrange(ZKP_ROUNDS):
             # print attempt
             zkp_prove_knowledge(enc_vote, plain_vote)
         print 'Are You sure you\'re you?'
-        for attempt in xrange(5):
+        for attempt in xrange(ZKP_ROUNDS):
             # print attempt
             zkp_prove_valid(enc_vote, plain_vote)
         print 'Huh, guess so.'

@@ -16,6 +16,7 @@ import AESHelper
 HOST = 'localhost'
 PORT_REGISTRAR = 9001
 PORT_BOARD = 9002
+ZKP_ROUNDS = 5
 
 
 class CommandHandler(StreamRequestHandler):
