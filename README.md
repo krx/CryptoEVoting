@@ -1,8 +1,29 @@
 # Crypto I - E-Voting
 
-To Run:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;- Start servers with ./startservers.sh<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Or "python registrar.py & python board.py"<br>
-&nbsp;&nbsp;&nbsp;&nbsp;- Start client with GUI with "python voterclient.py"</br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Or start client with command line with "python voter.py"
+### Start Servers
 
+The registrar and board servers can be started by running:
+
+```bash
+$ ./startservers.sh
+```
+
+Or:
+
+```bash
+$ python2 registrar.py & python2 board.py
+```
+
+### Start Voter Client
+
+There are two versions of the voter client. For a console version, run:
+
+```bash
+$ python2 voter.py
+```
+
+For the GUI version, run:
+
+```bash
+$ python2 voterclient.py
+```
