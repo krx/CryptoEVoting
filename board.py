@@ -1,14 +1,14 @@
 #!/usr/bin/env python2
 
+import json
 import thread
 from SocketServer import ThreadingTCPServer
+from hashlib import sha256
 
 from Crypto.Util.number import getRandomRange, inverse
 
 import paillier
 from common import *
-
-import json
 
 # Paillier keys
 pub = None  # type: paillier.PublicKey
@@ -41,53 +41,55 @@ class BoardHandler(SecureCommandHandler):
         self.add_cmd('vote', self.attempt_vote)
 
     def validate_signature(self, vote, signed):
-        return vote == pow(signed, reg_pub.e, reg_pub.n)
+        vote_hash = int(sha256(str(vote)).hexdigest(), 16)
+        return vote_hash == pow(signed, reg_pub.e, reg_pub.n)
 
     def validate_voter(self, name, password):
         reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
         return parse_res(reg_sock.recvline())  # TODO: assuming this is a bool, change if needed
 
-    def validate_zkp_knowledge(self, vote, know_A=1000, t=10):
-        for attempt in xrange(t):
-            # receive u
-            know_u = long(input()) % vote.pub.n_sq
-            # 3 rounds, A = 1000, p_valid = 1/(1000^3)
-            # self.println
-            know_e = getRandomRange(0, know_A)
-            # send e
-            self.println(know_e)
-            know_vw = input()
-            know_v, know_w = know_vw.strip().split(',')
-            test = (pow(vote.pub.g, know_v, vote.pub.n_sq) * pow(vote.ctxt, know_e, vote.pub.n_sq) * pow(know_w, vote.pub.n, vote.pub.n_sq)) % vote.pub.n_sq
+    def validate_zkp_knowledge(self, vote, know_A=1000):
+        # receive u
+        know_u = long(self.input()) % pub.n_sq
+        print 'GOT DAT U'
+        # 3 rounds, A = 1000, p_valid = 1/(1000^3)
+        # self.println
+        know_e = getRandomRange(0, know_A)
+        # send e
+        self.println(know_e)
+        print 'SENT DAT E'
+        know_vw = self.input()
+        print 'GOT DAT VW'
+        know_v, know_w = map(long, know_vw.strip().split(','))
+        test = (pow(pub.g, know_v, pub.n_sq) * pow(vote, know_e, pub.n_sq) * pow(know_w, pub.n, pub.n_sq)) % pub.n_sq
 
-            if know_u == test:
-                self.println("PASS")
-                return True
+        if know_u == test:
+            self.println("PASS")
+            return True
 
-            self.println("FAIL")
+        self.println("FAIL")
         return False
 
-    def validate_zkp_in_set(self, vote, A=1000, t=10):
-        for attempt in xrange(t):
-            vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
-            u_raw = input()
-            u = json.loads(u_raw)
+    def validate_zkp_in_set(self, vote, A=1000):
+        vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
+        u_raw = self.input()
+        u = json.loads(u_raw)
 
-            e = getRandomRange(0, A)
-            self.println(e)
+        e = getRandomRange(0, A)
+        self.println(e)
 
-            ev = input()
-            ev_dict = json.loads(ev)
+        ev = self.input()
+        ev_dict = json.loads(ev)
 
-            es = ev_dict["e"]
-            vs = ev_dict["v"]
+        es = ev_dict["e"]
+        vs = ev_dict["v"]
 
-            for j in xrange(self.votegen.num_cands):
-                if pow(vs[j], vote.pub.n, vote.pub.n_sq) != (u[j] * pow((vote.ctxt * inverse(pow(vote.pub.g, vote_set[j], vote.pub.n_sq), vote.pub.n_sq)), es[j], vote.pub.n_sq)) % vote.pub.n_sq:
-                    self.println("FAIL")
-                    return False
+        for j in xrange(self.votegen.num_cands):
+            if pow(vs[j], pub.n, pub.n_sq) != (u[j] * pow((vote * inverse(pow(pub.g, vote_set[j], pub.n_sq), pub.n_sq)), es[j], pub.n_sq)) % pub.n_sq:
+                self.println("FAIL")
+                return False
 
-            self.println("PASS")
+        self.println("PASS")
         return True
 
     def attempt_vote(self, args):
@@ -97,27 +99,41 @@ class BoardHandler(SecureCommandHandler):
 
         try:
             name = args['name']
-            password = args['password']
+            password = args['passhash']
             vote = args['vote']
             sig = args['signature']
         except KeyError:
             return 'VOTE usage: [name] [password] [vote] [signature]'
 
-        if self.validate_voter(name, password) \
-                and self.validate_signature(vote, sig) \
-                and self.validate_zkp_knowledge(vote) \
-                and self.validate_zkp_in_set(vote):
+        # if self.validate_voter(name, password) \
+        #         and self.validate_signature(vote, sig) \
+        #         and self.validate_zkp_knowledge(vote) \
+        #         and self.validate_zkp_in_set(vote):
+        if not self.validate_voter(name, password):
+            return 'Vote not accepted USER'
+        print 'USER DONE'
+        if not self.validate_signature(vote, sig):
+            return 'Vote not accepted SIG'
+        print 'SIG DONE'
+        for attempt in xrange(10):
+            print attempt
+            if not self.validate_zkp_knowledge(vote):
+                return 'Vote not accepted ZKP K'
+        print 'ZKPK DONE'
+        for attempt in xrange(10):
+            print attempt
+            if not self.validate_zkp_in_set(vote):
+                return 'Vote not accepted ZKP V'
+        # Add the voter to the table if we haven't yet
+        voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
+        if voterkey in board:
+            # A vote has already been cast by this voter
+            return 'Vote not accepted'
 
-            # Add the voter to the table if we haven't yet
-            voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
-            if voterkey in board:
-                # A vote has already been cast by this voter
-                return 'Vote not accepted'
-
-            # All checks passed
-            board[voterkey] = vote
-            return 'Vote accepted!'
-        return 'Vote not accepted'
+        # All checks passed
+        board[voterkey] = vote
+        return 'Vote accepted!'
+        # return 'Vote not accepted'
 
 
 if __name__ == "__main__":

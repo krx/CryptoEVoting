@@ -8,6 +8,7 @@ import json
 import paillier
 from paillier import random_range_coprime
 from common import *
+import time
 
 # Connect to registrar
 reg = SecureSocket()
@@ -142,79 +143,80 @@ def sign_vote(vote):
         raise SignError()
 
 
-def zkp_prove_knowledge(evote, pvote, t=10):
+def zkp_prove_knowledge(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> bool
-    for attempt in xrange(t):
-        # choose r in Zn
-        know_r = getRandomRange(0, evote.pub.n)
-        # choose s in Zn star
-        know_s = random_range_coprime(0, evote.pub.n, evote.pub.n)
-        # calc u
-        know_u = (pow(evote.pub.g, know_r,evote.pub.n_sq) * pow(know_s, evote.pub.n, evote.pub.n_sq)) % evote.pub.n_sq
-        # send u
-        board.send(str(know_u))
+    # choose r in Zn
+    know_r = getRandomRange(0, evote.pub.n)
+    # choose s in Zn star
+    know_s = random_range_coprime(0, evote.pub.n, evote.pub.n)
+    # calc u
+    know_u = (pow(evote.pub.g, know_r, evote.pub.n_sq) * pow(know_s, evote.pub.n, evote.pub.n_sq)) % evote.pub.n_sq
+    # send u
+    board.send(str(know_u))
+    print 'SENT DAT U'
 
-        # receive e
-        know_e = long(board.recvline().strip())
+    # receive e
+    know_e = long(board.recvline().strip())
+    print 'GOT DAT E'
 
-        # calc v, w
-        know_v = (know_r - know_e * pvote) % evote.pub.n
-        know_w = (know_s * pow(inverse(evote.rand_num, evote.pub.n), know_e, evote.pub.n) % evote.pub.n
+    # calc v, w
+    know_v = (know_r - know_e * pvote) % evote.pub.n
+    know_w = (know_s * pow(inverse(evote.rand_num, evote.pub.n), know_e, evote.pub.n)) % evote.pub.n
 
-        board.send(str(know_v) + "," + str(know_w))
-        result = board.recvline().strip()
-        if result != "PASS":
-            return False
+    board.send(str(know_v) + "," + str(know_w))
+    print 'SENT DAT VW'
+    result = board.recvline().strip()
+    print 'GOT DAT RESULT'
+    if result != "PASS":
+        return False
 
     return True
 
 
-def zkp_prove_valid(evote, pvote, t=10):
+def zkp_prove_valid(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> None
+    vote_set = map(votegen.gen, xrange(votegen.num_cands))
+    vote_i = vote_set.index(pvote)
+    ro = random_range_coprime(0, evote.pub.n, evote.pub.n)
+    vote_es = []
+    vote_vs = []
+    vote_us = []
+    for j in xrange(votegen.num_cands):
+        if j == vote_i:
+            vote_es.append(0)
+            vote_vs.append(0)
+            vote_us.append(pow(ro, evote.pub.n, evote.pub.n_sq))
+            continue
 
-    for attempt in xrange(t):
-        vote_set = map(votegen.gen, xrange(votegen.num_cands))
-        vote_i = vote_set.index(pvote)
-        ro = random_range_coprime(0, evote.pub.n, evote.pub.n)
-        vote_es = []
-        vote_vs = []
-        vote_us = []
-        for j in xrange(votegen.num_cands):
-            if j == vote_i:
-                vote_es.append(0)
-                vote_vs.append(0)
-                vote_us.append(pow(ro, evote.pub.n, evote.pub.n_sq)
-                continue
+        e_j = getRandomRange(0, evote.pub.n)
+        vote_es.append(e_j)
 
-            e_j = getRandomRange(0, evote.pub.n)
-            vote_es.append(e_j)
+        v_j = random_range_coprime(0, evote.pub.n, evote.pub.n)
 
-            v_j = random_range_coprime(0, evote.pub.n, evote.pub.n)
+        vote_vs.append(v_j)
 
-            vote_vs.append(float(v_j))
+        u_j = (pow(v_j, evote.pub.n, evote.pub.n_sq) * pow(evote.pub.g * inverse(evote.ctxt, evote.pub.n_sq), e_j, evote.pub.n_sq)) % evote.pub.n_sq
+        vote_us.append(u_j)
 
-            u_j = (pow(v_j, evote.pub.n, evote.pub.n_sq)*pow(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq), e_j, evote.pub.n_sq)) % evote.pub.n_sq
-            vote_us.append(u_j)
+    # send u's
+    board.send(json.dumps(vote_us))
 
-        # send u's
-        board.send(json.dumps(vote_us))
+    # receive e
+    chal_e = int(board.recvline().strip())
 
-        # receive e
-        chal_e = int(board.recvline().strip())
+    e_i = (chal_e - sum(vote_es)) % evote.pub.n
 
-        e_i = (chal_e - sum(vote_es)) % evote.pub.n
-        vote_es[vote_i] = e_i
+    v_i = (ro * pow(evote.rand_num, e_i, evote.pub.n) * pow(evote.pub.g, ((chal_e - sum(vote_es)) / evote.pub.n), evote.pub.n)) % evote.pub.n
+    vote_vs[vote_i] = v_i
+    vote_es[vote_i] = e_i
 
-        v_i = (ro*pow(evote.rand_num, e_i, evote.pub.n)*pow(evote.pub.g, ((chal_e - sum(vote_es))/float(evote.pub.n)),evote.pub.n)) % evote.pub.n
-        vote_vs[vote_i] = v_i
+    # send e,v
+    board.send(json.dumps({'e': vote_es, 'v': vote_vs}))
 
-        # send e,v
-        board.send(json.dumps({'e': vote_es, 'v': vote_vs}))
+    result = board.recvline().strip()
 
-        result = board.recvline().strip()
-
-        if result != "PASS":
-            return False
+    if result != "PASS":
+        return False
     return True
 
 
@@ -250,13 +252,17 @@ def cast_vote(gui=False, candidate=None):
 
     board.send(make_cmd('vote', {
         'name': login_user,
-        'password': login_pass,
+        'passhash': login_pass,
         'vote': enc_vote.ctxt,
         'signature': sig_vote
     }))
 
-    zkp_prove_knowledge(enc_vote, plain_vote)
-    zkp_prove_valid(enc_vote, plain_vote)
+    for attempt in xrange(10):
+        print attempt
+        zkp_prove_knowledge(enc_vote, plain_vote)
+    for attempt in xrange(10):
+        print attempt
+        zkp_prove_valid(enc_vote, plain_vote)
 
     print parse_res(board.recvline())
 

@@ -10,7 +10,7 @@ from SocketServer import StreamRequestHandler
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-
+import traceback
 import AESHelper
 
 HOST = 'localhost'
@@ -54,6 +54,7 @@ class CommandHandler(StreamRequestHandler):
             res = self.commands[cmd['command']](cmd['args'])
             self.println(make_res(res))
         except:
+            print traceback.format_exc()
             self.println(make_res('Options: {}'.format(', '.join(self.commands.keys()))))
 
     def handle(self):
