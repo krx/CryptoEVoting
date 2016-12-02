@@ -44,7 +44,7 @@ def check_logged_in():
         raise LoginError()
 
 
-def register_voter():
+def register_voter(gui=False, user=None, password=None):
     global login_user, login_pass
 
     try:
@@ -61,20 +61,33 @@ def register_voter():
         return
 
     # Attempt to register this voter
-    reg.send(make_cmd('register', {
-        'name': raw_input('Enter name: '),
-        'password': sha256(raw_input('Enter password: ')).hexdigest()
-    }))
+    if not gui:
+        reg.send(make_cmd('register', {
+            'name': raw_input('Enter name: '),
+            'password': sha256(raw_input('Enter password: ')).hexdigest()
+        }))
+    else:
+        reg.send(make_cmd('register', {
+            'name': user,
+            'password': sha256(password).hexdigest()
+        }))
     print parse_res(reg.recvline())
 
 
-def login_voter():
+def login_voter(gui=False, user=None, password=None):
     global login_user, login_pass
     # Attempt to login as this voter
-    args = {
-        'name': raw_input('Enter name: '),
-        'password': sha256(raw_input('Enter password: ')).hexdigest()
-    }
+    args = None
+    if not gui:
+        args = {
+            'name': raw_input('Enter name: '),
+            'password': sha256(raw_input('Enter password: ')).hexdigest()
+        }
+    else:
+        args = {
+            'name': user,
+            'password': sha256(password).hexdigest()
+        }
     reg.send(make_cmd('user', args))
 
     # Save info if successful
@@ -86,11 +99,11 @@ def login_voter():
         print 'Could not login'
 
 
-def logout_voter():
+def logout_voter(gui=False):
     check_logged_in()
     global login_user, login_pass
     login_user = login_pass = None
-    print 'Logged out'    
+    print 'Logged out'
    
 def sign_vote(vote):
     # type: (paillier.EncryptedMessage) -> long
@@ -185,7 +198,7 @@ def zkp_prove_valid(evote, pvote):
     # send e,v
 
 
-def cast_vote():
+def cast_vote(gui=False, candidate=None):
     # We can only vote after registration closes
     board.send(make_cmd('regopen'))
     if parse_res(board.recvline()):
@@ -199,17 +212,17 @@ def cast_vote():
 
     # Make sure we're logged in
     check_logged_in()
-
-    # Select the candidate you want
-    print '\nSelect who you want to vote for:'
-    while True:
-        try:
-            candidate = int(raw_input('> ')) - 1
-            assert 0 <= candidate < len(candidates)
-            break
-        except (ValueError, AssertionError):
-            print 'Invalid choice'
-
+    if not gui:
+        # Select the candidate you want
+        print '\nSelect who you want to vote for:'
+        while True:
+            try:
+                candidate = int(raw_input('> ')) - 1
+                assert 0 <= candidate < len(candidates)
+                break
+            except (ValueError, AssertionError):
+                print 'Invalid choice'
+    
     plain_vote = votegen.gen(candidate)
     enc_vote = board_key.encrypt(plain_vote)
 
@@ -217,7 +230,7 @@ def cast_vote():
     sig_vote = sign_vote(enc_vote)
 
 
-def close_and_quit():
+def close_and_quit(gui=False):
     reg.send(make_cmd('quit'))
     board.send(make_cmd('quit'))
     reg.close()
