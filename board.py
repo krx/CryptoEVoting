@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 
-import json
 import thread
 from SocketServer import ThreadingTCPServer
 from hashlib import sha256

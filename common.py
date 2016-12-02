@@ -5,21 +5,47 @@ import base64
 import hashlib
 import json
 import socket
+import traceback
 from SocketServer import StreamRequestHandler
 
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-import traceback
+
 import AESHelper
 
+# Network constants
 HOST = 'localhost'
 PORT_REGISTRAR = 9001
 PORT_BOARD = 9002
+
+# Common # of rounds in ZKP
 ZKP_ROUNDS = 5
 
 
 class CommandHandler(StreamRequestHandler):
+    """
+    Handler template for a command-based service
+
+    To define commands, you need to override init_commands():
+        To define a command, you call add_cmd and pass:
+        - the command name (case insensitive)
+        - a function that takes a single dict argument
+    That's it, once commands are received the functions you defined will be called
+
+    Any commands that are received are expected to be in the JSON format:
+    {
+        "command": "command name",
+        "args": {
+            "any": "arguments",
+            "go": "here"
+        }
+    }
+
+    The response will be in the format:
+    {"res": "Response goes here"}
+    """
+
     def __init__(self, request, client_address, server):
         self.running = True
         self.commands = {}
@@ -64,6 +90,10 @@ class CommandHandler(StreamRequestHandler):
 
 
 class Socket(socket.socket):
+    """
+    Little extension to sockets to add some convenient functions
+    """
+
     def __init__(self, family=socket.AF_INET, stype=socket.SOCK_STREAM, proto=0, _sock=None):
         socket.socket.__init__(self, family, stype, proto, _sock)
 
@@ -71,16 +101,31 @@ class Socket(socket.socket):
         self.raw_send = self.send
 
     def recvline(self):
+        """ Reads from the buffer until a newline ('\n') is found
+        This will block until it reads in a newline
+
+        Returns:
+            str: The line that was read, including the newline
+        """
         buf = self.recv(1)
         while buf[-1] != '\n':
             buf += self.recv(1)
         return buf
 
     def sendline(self, data):
+        """ Sends a string of data over the socket, ending it with a newline
+
+        Args:
+            data (Any): What to print to the socket
+        """
         self.send('{}\n'.format(str(data)))
 
 
 class SecureCommandHandler(CommandHandler):
+    """
+    A CommandHandler that encrypts traffic using AES
+    """
+
     # Shared across all handlers in this process
     rsa_key = RSA.generate(2048)
 
@@ -90,27 +135,37 @@ class SecureCommandHandler(CommandHandler):
         CommandHandler.__init__(self, request, client_address, server)
 
     def input(self, prompt=''):
+        # Read in the encrypted data and decrypt it before returning
         enc = CommandHandler.input(self, prompt)
         return AESHelper.decrypt(base64.b64decode(enc), self.aes_key, self.aes_iv)
 
     def handle(self):
-        # Send the public key
+        # Send the public key to the client
         self.println(json.dumps({'n': self.rsa_key.n, 'e': self.rsa_key.e}))
 
         # Get the encrypted AES iv/key
         aes_data = self.rsa_key.decrypt(base64.b64decode(CommandHandler.input(self)))
         self.aes_iv, self.aes_key = aes_data[:AES.block_size], aes_data[AES.block_size:]
 
+        # Continue with the handler as usual
         CommandHandler.handle(self)
 
 
 class SecureSocket(Socket):
+    """
+    An extension to Socket that encrypts traffic with AES
+    """
+
     def __init__(self, family=socket.AF_INET, stype=socket.SOCK_STREAM, proto=0, _sock=None):
         Socket.__init__(self, family, stype, proto, _sock)
+
+        # Generate AES iv/key
         self.aes_iv = get_random_bytes(AES.block_size)
         self.aes_key = get_random_bytes(AES.block_size * 2)
 
         # override the regular send with the encrypted version
+        # We have to do it this way because socket.__init__ overwrites the 'send' attribute
+        # So this "fixes" that
         self.send = self.encsend
 
     def connect(self, addr):
@@ -125,11 +180,14 @@ class SecureSocket(Socket):
         self.raw_send(base64.b64encode(rsa_pub_key.encrypt(self.aes_iv + self.aes_key, 32)[0]) + '\n')
 
     def encsend(self, data):
+        # Encrypt the data with AES before sending
         self.raw_send(base64.b64encode(AESHelper.encrypt(data, self.aes_key, self.aes_iv)) + '\n')
 
 
 # Command util functions
 def make_cmd(cmd, args=None):
+    # type: (str, dict) -> str
+    # Helper to create a formatted command string from a name/args
     return json.dumps({
         'command': cmd.upper(),
         'args': args or {}
@@ -137,10 +195,14 @@ def make_cmd(cmd, args=None):
 
 
 def make_res(res):
+    # type: (object) -> str
+    # Throw whatever the result is in a JSON response
     return json.dumps({'res': res})
 
 
 def parse_res(res):
+    # type: (str) -> object
+    # Read the result from a JSON response
     return json.loads(res)['res']
 
 
