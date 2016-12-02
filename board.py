@@ -3,7 +3,7 @@
 import thread
 from SocketServer import ThreadingTCPServer
 
-from Crypto.Util.number import getRandomRange
+from Crypto.Util.number import getRandomRange, inverse
 
 import paillier
 from common import *
@@ -47,47 +47,48 @@ class BoardHandler(SecureCommandHandler):
         reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
         return parse_res(reg_sock.recvline())  # TODO: assuming this is a bool, change if needed
 
-    def validate_zkp_knowledge(self, vote, know_A=1000):
-        # receive u
-        know_u = long(input()) % vote.pub.n_sq
-        # 3 rounds, A = 1000, p_valid = 1/(1000^3)
-        # self.println
-        know_e = getRandomRange(0, know_A)
-        # send e
-        self.println(know_e)
-        know_vw = input()
-        know_v, know_w = know_vw.strip().split(',')
-        test = (vote.pub.g ** know_v * vote.ctxt ** know_e * know_w ** vote.pub.N) % vote.pub.n_sq
+    def validate_zkp_knowledge(self, vote, know_A=1000, t=10):
+        for attempt in xrange(t):
+            # receive u
+            know_u = long(input()) % vote.pub.n_sq
+            # 3 rounds, A = 1000, p_valid = 1/(1000^3)
+            # self.println
+            know_e = getRandomRange(0, know_A)
+            # send e
+            self.println(know_e)
+            know_vw = input()
+            know_v, know_w = know_vw.strip().split(',')
+            test = (vote.pub.g ** know_v * vote.ctxt ** know_e * know_w ** vote.pub.N) % vote.pub.n_sq
 
-        if know_u == test:
-            self.println("PASS")
-            return True
+            if know_u == test:
+                self.println("PASS")
+                return True
 
-        self.println("FAIL")
+            self.println("FAIL")
         return False
 
-    def validate_zkp_in_set(self, vote, A = 1000):
-        vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
-        u_raw = input()
-        u = json.loads(u)
+    def validate_zkp_in_set(self, vote, A = 1000, t=10):
+        for attempt in xrange(t):
+            vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
+            u_raw = input()
+            u = json.loads(u_raw)
 
-        e = getRandomRange(0, A)
-        self.println(e)
+            e = getRandomRange(0, A)
+            self.println(e)
 
-        ev = input()
-        ev_dict = json.loads(ev)
+            ev = input()
+            ev_dict = json.loads(ev)
 
-        es = ev_dict["e"]
-        vs = ev_dict["v"]
+            es = ev_dict["e"]
+            vs = ev_dict["v"]
 
-        for j in xrange(self.votegen.num_cands):
-            if (vs[j]**vote.pub.n) % vote.pub.n_sq != (u[j]*(vote.ctxt*inverse(vote.pub.g**voter_set[j], vote.pub.n_sq))**es[j]) % vote.pub.n_sq:
-                self.println("FAIL")
-                return False
+            for j in xrange(self.votegen.num_cands):
+                if (vs[j]**vote.pub.n) % vote.pub.n_sq != (u[j]*(vote.ctxt*inverse(vote.pub.g**vote_set[j], vote.pub.n_sq))**es[j]) % vote.pub.n_sq:
+                    self.println("FAIL")
+                    return False
 
-        self.println("PASS")
+            self.println("PASS")
         return True
-
 
     def attempt_vote(self, args):
         if self.reg_open:

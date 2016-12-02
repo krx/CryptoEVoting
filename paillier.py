@@ -16,9 +16,7 @@ class PublicKey:
         if not isinstance(ptxt, (int, long)):
             raise TypeError('Plaintext must be a number')
 
-        r = getRandomRange(2, self.n)
-        while GCD(r, self.n) != 1:
-            r = getRandomRange(2, self.n)
+        r = random_range_coprime(2, self.n, self.n)
         ctxt = (pow(self.g, ptxt, self.n_sq) * pow(r, self.n, self.n_sq)) % self.n_sq
         return EncryptedMessage(self, ctxt, r)
 
@@ -101,3 +99,10 @@ def gen_keypair(nbits=2048):
     q = getStrongPrime(nbits / 2)
     pub = PublicKey(p * q)
     return pub, PrivateKey(pub, p, q)
+
+
+def random_range_coprime(a, b, n):
+    res = getRandomRange(a, b)
+    while GCD(res, n) != 1:
+        res = getRandomRange(a, b)
+    return res
