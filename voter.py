@@ -143,9 +143,46 @@ def zkp_prove_knowledge(evote, pvote):
     return True
 
 
-def zkp_prove_valid(vote):
-    # type: (paillier.EncryptedMessage) -> None
+def zkp_prove_valid(evote, pvote):
+    # type: (paillier.EncryptedMessage), (long) -> None
     vote_set = map(votegen.gen, xrange(votegen.num_cands))
+    vote_i = vote_set.index(pvote)
+    ro = getRandomRange(0, evote.pub.n)
+    while GCD(ro, evote.pub.n) != 1:
+        ro = getRandomRange(0, evote.pub.n)
+    vote_es = []
+    vote_vs = []
+    vote_us = []
+    for j in xrange(votegen.num_cands):
+        if j == vote_i:
+            vote_es.append(0)
+            vote_vs.append(0) 
+            vote_us.append((ro**evote.pub.n) % evote.pub.n_sq)
+            continue
+        
+        e_j = getRandomRange(0, evote.pub.n)
+        votes_es.append(e_j)
+
+        v_j = getRandomRange(0, evote.pub.n)
+        while GCD(v_j, evote.pub.n) != 1:
+            v_j = getRandomRange(0, evote.pub.n)
+        vote_vs.append(v_j)
+        
+        u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
+        vote_us.append(u_j)
+
+    # send u's
+
+    # receive e
+    chal_e = 13224
+
+    e_i = (chal_e - sum(vote_es)) % evote.pub.n
+    vote_es[vote_i] = e_i
+
+    v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/evote.pub.n)) % evote.pub.n
+    vote_vs[vote_i] = v_i
+
+    # send e,v
 
 
 def cast_vote():
