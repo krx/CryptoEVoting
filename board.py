@@ -85,10 +85,12 @@ class BoardHandler(SecureCommandHandler):
         vs = ev_dict["v"]
 
         for j in xrange(self.votegen.num_cands):
-            if pow(vs[j], pub.n, pub.n_sq) != (u[j] * pow((vote * inverse(pow(pub.g, vote_set[j], pub.n_sq), pub.n_sq)), es[j], pub.n_sq)) % pub.n_sq:
+            print 'j -', j
+            if pow(vs[j], pub.n, pub.n_sq) != (u[j] * pow(vote * inverse(pow(pub.g, vote_set[j], pub.n_sq), pub.n_sq), es[j], pub.n_sq)) % pub.n_sq:
+                print 'FAIL'
                 self.println("FAIL")
                 return False
-
+        print 'PASS'
         self.println("PASS")
         return True
 

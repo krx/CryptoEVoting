@@ -192,10 +192,9 @@ def zkp_prove_valid(evote, pvote):
         vote_es.append(e_j)
 
         v_j = random_range_coprime(0, evote.pub.n, evote.pub.n)
-
         vote_vs.append(v_j)
 
-        u_j = (pow(v_j, evote.pub.n, evote.pub.n_sq) * pow(evote.pub.g * inverse(evote.ctxt, evote.pub.n_sq), e_j, evote.pub.n_sq)) % evote.pub.n_sq
+        u_j = (pow(v_j, evote.pub.n, evote.pub.n_sq) * pow(pow(evote.pub.g, vote_set[j], evote.pub.n_sq) * inverse(evote.ctxt, evote.pub.n_sq), e_j, evote.pub.n_sq)) % evote.pub.n_sq
         vote_us.append(u_j)
 
     # send u's
@@ -206,7 +205,7 @@ def zkp_prove_valid(evote, pvote):
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
 
-    v_i = (ro * pow(evote.rand_num, e_i, evote.pub.n) * pow(evote.pub.g, ((chal_e - sum(vote_es)) / evote.pub.n), evote.pub.n)) % evote.pub.n
+    v_i = (ro * pow(evote.rand_num, e_i, evote.pub.n) * inverse(pow(evote.pub.g, abs(((chal_e - sum(vote_es)) / evote.pub.n)), evote.pub.n), evote.pub.n)) % evote.pub.n
     vote_vs[vote_i] = v_i
     vote_es[vote_i] = e_i
 
