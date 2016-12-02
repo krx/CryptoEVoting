@@ -247,7 +247,7 @@ def cast_vote(gui=False, candidate=None):
                 break
             except (ValueError, AssertionError):
                 print 'Invalid choice'
-    plain_vote = votegen.gen(candidate) | votegen.gen(candidate + 1)
+    plain_vote = votegen.gen(candidate)
     enc_vote = board_key.encrypt(plain_vote)
 
     # Get a signature on our vote
