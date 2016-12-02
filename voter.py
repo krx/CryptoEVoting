@@ -77,8 +77,15 @@ def register_voter(gui=False, user=None, password=None):
 
 def login_voter(gui=False, user=None, password=None):
     global login_user, login_pass
+
+    try:
+        check_logged_in()
+        return "Already Logged In"
+    except:
+        pass
     # Attempt to login as this voter
     args = None
+
     if not gui:
         args = {
             'name': raw_input('Enter name: '),
