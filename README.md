@@ -57,3 +57,7 @@ The board has 3 phases, hit `enter` to cycle through them (and quit at the end)
 ### Voter client
 
 Instructions included in client
+
+### Voters
+
+voters.db can be edited/deleted to change the registration status of voters
