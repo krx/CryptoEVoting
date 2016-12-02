@@ -109,11 +109,15 @@ def logout_voter(gui=False):
 
 def sign_vote(vote):
     # type: (paillier.EncryptedMessage) -> long
-    # Blind and send our encrypted vote
-
     check_logged_in()
+
+    # Blind and send our encrypted vote
+    # The hash is our m
+    vote_hash = int(sha256(str(vote.ctxt)).hexdigest(), 16)
+
+    # Pick r, calculate (mr^e mod n) and send it to get signed
     blind_r = getRandomRange(2, reg_key.n)
-    blinded_vote = (vote.ctxt * pow(blind_r, reg_key.e, reg_key.n)) % reg_key.n
+    blinded_vote = (vote_hash * pow(blind_r, reg_key.e, reg_key.n)) % reg_key.n
     reg.send(make_cmd('sign', {
         'name': login_user,
         'password': login_pass,
@@ -122,8 +126,9 @@ def sign_vote(vote):
 
     # Get the signed vote and undo the blinding
     try:
-        signed = (parse_res(reg.recvline()) / blind_r) % reg_key.n
-        assert signed == vote.ctxt
+        # Unblind the signature to get our result
+        signed = (parse_res(reg.recvline()) * inverse(blind_r, reg_key.n)) % reg_key.n
+        assert pow(signed, reg_key.e, reg_key.n) == vote_hash
         return signed
     except (ValueError, AssertionError):
         raise SignError()
