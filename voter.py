@@ -49,16 +49,14 @@ def register_voter(gui=False, user=None, password=None):
 
     try:
         check_logged_in()
-        print 'Already Logged In'
-        return
+        return 'Already Logged In'
     except:
         pass
 
     # We can only register in the registration phase
     board.send(make_cmd('regopen'))
     if not parse_res(board.recvline()):
-        print 'Registration is currently closed'
-        return
+        return 'Registration is currently closed'
 
     # Attempt to register this voter
     if not gui:
@@ -71,7 +69,7 @@ def register_voter(gui=False, user=None, password=None):
             'name': user,
             'password': sha256(password).hexdigest()
         }))
-    print parse_res(reg.recvline())
+    return parse_res(reg.recvline())
 
 
 def login_voter(gui=False, user=None, password=None):
@@ -94,16 +92,16 @@ def login_voter(gui=False, user=None, password=None):
     if parse_res(reg.recvline()):
         login_user = args['name']
         login_pass = args['password']
-        print 'Successfully logged in as \'' + args['name'] + '\''
+        return 'Successfully logged in as \'' + args['name'] + '\''
     else:
-        print 'Could not login'
+        return 'Could not login'
 
 
 def logout_voter(gui=False):
     check_logged_in()
     global login_user, login_pass
     login_user = login_pass = None
-    print 'Logged out'
+    return 'Logged out'
    
 def sign_vote(vote):
     # type: (paillier.EncryptedMessage) -> long
@@ -202,8 +200,7 @@ def cast_vote(gui=False, candidate=None):
     # We can only vote after registration closes
     board.send(make_cmd('regopen'))
     if parse_res(board.recvline()):
-        print 'The election is not currently running'
-        return
+        return 'The election is not currently running'
 
     # Update the vote generator if needed
     if votegen.block_size is None:
@@ -273,7 +270,7 @@ if __name__ == '__main__':
             close_and_quit()
 
         try:
-            funcs[choice]()
+            print funcs[choice]()
         except LoginError:
             print 'Must be logged in'
         except SignError:

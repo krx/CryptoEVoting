@@ -23,21 +23,29 @@ class Application(pygubu.TkApplication):
 
         self.mainwindow = builder.get_object('Frame_1', self.master)
         builder.connect_callbacks(self)
-    
+ 
+    def updateout(self, data):
+        try: 
+            voter.check_logged_in()
+            self.builder.get_object('LoggedinLabel')["text"] = "Logged In As: " + voter.login_user
+        except:
+            self.builder.get_object('LoggedinLabel')["text"] = 'Not Logged In'
+        self.builder.get_object('OutputLabel')["text"] = data
+
     def getel(self, name):
         return self.builder.get_object(name).get()
 
     def registerclick(self):
-        voter.register_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox'))
+        self.updateout(voter.register_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox')))
 
     def voteclick(self):
-        voter.cast_vote(True, self.cand.get())
+        self.updateout(voter.cast_vote(True, self.cand.get()))
 
     def loginclick(self):
-        voter.login_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox'))
-
-    def logoutclick(self):
-        voter.close_and_quit(True)
+       self.updateout( voter.login_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox')))
+        
+    def exitclick(self):
+        self.updateout(voter.close_and_quit(True))
 
 
 root = tk.Tk()
