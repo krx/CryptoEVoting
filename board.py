@@ -117,12 +117,12 @@ class BoardHandler(SecureCommandHandler):
         if not self.validate_signature(vote, sig):
             return 'Vote not accepted SIG'
         # print 'SIG DONE'
-        for attempt in xrange(10):
+        for attempt in xrange(5):
             # print attempt
             if not self.validate_zkp_knowledge(vote):
                 return 'Vote not accepted ZKP K'
         # print 'ZKPK DONE'
-        for attempt in xrange(10):
+        for attempt in xrange(5):
             # print attempt
             if not self.validate_zkp_in_set(vote):
                 return 'Vote not accepted ZKP V'
@@ -162,11 +162,16 @@ if __name__ == "__main__":
     if len(board.values()) == 0:
         print 'Nobody voted, RIP'
     else:
+        for v in board.values():
+            print bin(priv.decrypt(v))
+
         results = zip(candidates, BoardHandler.votegen.parse(priv.decrypt(sum(board.values()))))
 
         print 'RESULTS\n------------'
         for cand, result in results:
             print '{}: {}'.format(cand, result)
+
+    srv.shutdown()
 
     # Disconnect from registrar
     reg_sock.send(make_cmd('quit'))

@@ -155,28 +155,22 @@ def zkp_prove_knowledge(evote, pvote):
     know_u = (pow(evote.pub.g, know_r, evote.pub.n_sq) * pow(know_s, evote.pub.n, evote.pub.n_sq)) % evote.pub.n_sq
     # send u
     board.send(str(know_u))
-    print 'SENT DAT U'
 
     # receive e
     know_e = long(board.recvline().strip())
-    print 'GOT DAT E'
 
     # calc v, w
     know_v = (know_r - know_e * pvote) % evote.pub.n
     know_w = (know_s * pow(inverse(evote.rand_num, evote.pub.n), know_e, evote.pub.n)) % evote.pub.n
 
     board.send(str(know_v) + "," + str(know_w))
-    print 'SENT DAT VW'
-    result = board.recvline().strip()
-    print 'GOT DAT RESULT'
-    if result != "PASS":
-        return False
 
-    return True
+    result = board.recvline().strip()
+    return result == 'PASS'
 
 
 def zkp_prove_valid(evote, pvote):
-    # type: (paillier.EncryptedMessage, long) -> None
+    # type: (paillier.EncryptedMessage, long) -> bool
     vote_set = map(votegen.gen, xrange(votegen.num_cands))
     vote_i = vote_set.index(pvote)
     ro = random_range_coprime(0, evote.pub.n, evote.pub.n)
@@ -207,8 +201,8 @@ def zkp_prove_valid(evote, pvote):
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
     
-    print evote.pub.g
-    print chal_e-sum(vote_es)/evote.pub.n
+    # print evote.pub.g
+    # print chal_e-sum(vote_es)/evote.pub.n
 
     g_exp = (chal_e - sum(vote_es)) / evote.pub.n
     if g_exp < 0:
@@ -224,10 +218,7 @@ def zkp_prove_valid(evote, pvote):
     board.send(json.dumps({'e': vote_es, 'v': vote_vs}))
 
     result = board.recvline().strip()
-
-    if result != "PASS":
-        return False
-    return True
+    return result == 'PASS'
 
 
 def cast_vote(gui=False, candidate=None):
@@ -267,10 +258,10 @@ def cast_vote(gui=False, candidate=None):
         'signature': sig_vote
     }))
 
-    for attempt in xrange(10):
+    for attempt in xrange(5):
         print attempt
         zkp_prove_knowledge(enc_vote, plain_vote)
-    for attempt in xrange(10):
+    for attempt in xrange(5):
         print attempt
         zkp_prove_valid(enc_vote, plain_vote)
 
