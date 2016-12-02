@@ -38,10 +38,14 @@ class Application(pygubu.TkApplication):
         self.updateout(voter.register_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox')))
 
     def voteclick(self):
-        self.updateout(voter.cast_vote(True, self.cand.get()))
+        try:
+            voter.check_logged_in()
+            self.updateout(voter.cast_vote(True, self.cand.get()))
+        except:
+            self.updateout('Not Logged In')
 
     def loginclick(self):
-       self.updateout( voter.login_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox')))
+       self.updateout(voter.login_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox')))
  
     def logoutclick(self):
         try:
