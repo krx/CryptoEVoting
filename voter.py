@@ -141,12 +141,9 @@ def sign_vote(vote):
     except (ValueError, AssertionError):
         raise SignError()
 
-<<<<<<< Updated upstream
 # adapted from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_knowledge board.py
-=======
 # Prove that client knows plaintext
->>>>>>> Stashed changes
 def zkp_prove_knowledge(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> bool
     # choose r in Zn
@@ -170,12 +167,9 @@ def zkp_prove_knowledge(evote, pvote):
     result = board.recvline().strip()
     return result == 'PASS'
 
-<<<<<<< Updated upstream
 # from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_in_set in board.py
-=======
 # Prove message is valid vote
->>>>>>> Stashed changes
 def zkp_prove_valid(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> bool
     vote_set = map(votegen.gen, xrange(votegen.num_cands))
