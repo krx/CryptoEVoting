@@ -111,6 +111,11 @@ class BoardHandler(SecureCommandHandler):
         #         and self.validate_signature(vote, sig) \
         #         and self.validate_zkp_knowledge(vote) \
         #         and self.validate_zkp_in_set(vote):
+        voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
+        if voterkey in board:
+            # A vote has already been cast by this voter
+            return 'Vote not accepted'
+
         if not self.validate_voter(name, password):
             return 'Vote not accepted USER'
         # print 'USER DONE'
@@ -126,11 +131,6 @@ class BoardHandler(SecureCommandHandler):
             # print attempt
             if not self.validate_zkp_in_set(vote):
                 return 'Vote not accepted ZKP V'
-        # Add the voter to the table if we haven't yet
-        voterkey = '{}:{}'.format(name, password)  # TODO: probably change how we keep track of this
-        if voterkey in board:
-            # A vote has already been cast by this voter
-            return 'Vote not accepted'
 
         # All checks passed
         board[voterkey] = vote
