@@ -97,12 +97,6 @@ class BoardHandler(RSACommandHandler):
         return 'Vote not accepted'
 
 
-def count_votes(cand):
-    votes = [board[voter][cand] for voter in board.keys() if cand in board[voter]]
-    result = priv.decrypt(sum(votes))
-    return cand, len(votes), result
-
-
 if __name__ == "__main__":
     # Generate a new set of keys
     print 'Generating Paillier key pair ...',
