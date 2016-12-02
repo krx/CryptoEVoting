@@ -38,7 +38,7 @@ For the GUI version, run:
 
 ## Usage
 
-### Edit Candidates
+### Candidates
 
 Candidates are listed, one per line, in candidates.txt
 
