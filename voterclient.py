@@ -3,7 +3,6 @@ import hashlib
 import Tkinter as tk
 from Tkinter import *
 import pygubu
-import tkMessageBox as messagebox
 import voter
 from common import *
 

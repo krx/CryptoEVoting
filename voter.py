@@ -8,7 +8,6 @@ import json
 import paillier
 from paillier import random_range_coprime
 from common import *
-import time
 
 # Connect to registrar
 reg = SecureSocket()
