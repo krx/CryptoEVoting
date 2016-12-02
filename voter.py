@@ -131,7 +131,7 @@ def zkp_prove_knowledge(evote, pvote):
 
 def zkp_prove_valid(vote):
     # type: (paillier.EncryptedMessage) -> None
-    vote_set = map(votegen.gen, votegen.num_cands)
+    vote_set = map(votegen.gen, xrange(votegen.num_cands))
 
 
 def cast_vote():
