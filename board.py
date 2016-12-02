@@ -58,7 +58,7 @@ class BoardHandler(SecureCommandHandler):
             self.println(know_e)
             know_vw = input()
             know_v, know_w = know_vw.strip().split(',')
-            test = (vote.pub.g ** know_v * vote.ctxt ** know_e * know_w ** vote.pub.N) % vote.pub.n_sq
+            test = (pow(vote.pub.g, know_v, vote.pub.n_sq) * pow(vote.ctxt, know_e, vote.pub.n_sq) * pow(know_w, vote.pub.n, vote.pub.n_sq)) % vote.pub.n_sq
 
             if know_u == test:
                 self.println("PASS")
@@ -67,7 +67,7 @@ class BoardHandler(SecureCommandHandler):
             self.println("FAIL")
         return False
 
-    def validate_zkp_in_set(self, vote, A = 1000, t=10):
+    def validate_zkp_in_set(self, vote, A=1000, t=10):
         for attempt in xrange(t):
             vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
             u_raw = input()
@@ -83,7 +83,7 @@ class BoardHandler(SecureCommandHandler):
             vs = ev_dict["v"]
 
             for j in xrange(self.votegen.num_cands):
-                if (vs[j]**vote.pub.n) % vote.pub.n_sq != (u[j]*(vote.ctxt*inverse(vote.pub.g**vote_set[j], vote.pub.n_sq))**es[j]) % vote.pub.n_sq:
+                if pow(vs[j], vote.pub.n, vote.pub.n_sq) != (u[j] * pow((vote.ctxt * inverse(pow(vote.pub.g, vote_set[j], vote.pub.n_sq), vote.pub.n_sq)), es[j], vote.pub.n_sq)) % vote.pub.n_sq:
                     self.println("FAIL")
                     return False
 
