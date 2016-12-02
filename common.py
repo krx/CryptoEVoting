@@ -106,7 +106,7 @@ class SecureSocket(Socket):
     def __init__(self, family=socket.AF_INET, stype=socket.SOCK_STREAM, proto=0, _sock=None):
         Socket.__init__(self, family, stype, proto, _sock)
         self.aes_iv = get_random_bytes(AES.block_size)
-        self.aes_key = get_random_bytes(AES.block_size)
+        self.aes_key = get_random_bytes(AES.block_size * 2)
 
         # override the regular send with the encrypted version
         self.send = self.encsend
