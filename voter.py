@@ -258,12 +258,15 @@ def cast_vote(gui=False, candidate=None):
     }))
 
     try:
+        print 'Hmmm, lookin\' kinda shady...'
         for attempt in xrange(5):
-            print attempt
+            # print attempt
             zkp_prove_knowledge(enc_vote, plain_vote)
+        print 'Are You sure you\'re you?'
         for attempt in xrange(5):
-            print attempt
+            # print attempt
             zkp_prove_valid(enc_vote, plain_vote)
+        print 'Huh, guess so.'
     except ValueError:
         return 'Vote not accepted'
     return parse_res(board.recvline())
