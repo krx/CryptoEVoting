@@ -64,8 +64,6 @@ class VoterHandler(SecureCommandHandler):
 
         return "Successfully registered"
 
-
-
     # Attempts to sign encrypted vote
     def sign(self, args):
         try:
