@@ -28,7 +28,7 @@ candidates = parse_res(board.recvline())
 candidate_menu = '\n'.join(['{}) {}'.format(i + 1, cand) for i, cand in enumerate(candidates)])
 
 # Will be used to create votes
-vgen = VoteGenerator(len(candidates))
+votegen = VoteGenerator(len(candidates))
 
 # Keep track of the current user
 login_user = login_pass = None
@@ -131,7 +131,7 @@ def zkp_prove_knowledge(evote, pvote):
 
 def zkp_prove_valid(vote):
     # type: (paillier.EncryptedMessage) -> None
-    pass
+    vote_set = map(votegen.gen, votegen.num_cands)
 
 
 def cast_vote():

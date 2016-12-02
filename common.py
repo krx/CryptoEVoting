@@ -178,8 +178,7 @@ class VoteGenerator:
             raise ValueError('Block size is not set')
 
         vote_len = self.block_size * self.num_cands
-        vote = 1 << vote_len
-        vote |= 1 << ((self.num_cands - cindex - 1) * self.block_size)
+        vote = (1 << vote_len) | (1 << ((self.num_cands - cindex - 1) * self.block_size))
         return vote
 
     def parse(self, vote):
