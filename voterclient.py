@@ -7,11 +7,6 @@ import tkMessageBox as messagebox
 import voter
 from common import *
 
-#connect to server
-#s = RSASocket(socket.AF_INET, socket.SOCK_STREAM)
-#s.connect((HOST, PORT_REGISTRAR))
-
-
 
 class Application(pygubu.TkApplication):
     def _create_ui(self):
@@ -36,8 +31,10 @@ class Application(pygubu.TkApplication):
         voter.register_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox'))
 
     def voteclick(self):
-        print self.cand
-        voter.cast_vote(True, self.cand)
+        voter.cast_vote(True, self.cand.get())
+
+    def loginclick(self):
+        voter.login_voter(True, self.getel('UsernameBox'), self.getel('PasswordBox'))
 
     def logoutclick(self):
         voter.close_and_quit(True)
