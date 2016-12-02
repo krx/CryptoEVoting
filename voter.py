@@ -2,12 +2,11 @@
 
 from hashlib import sha256
 
-from Crypto.Util.number import getRandomRange, GCD, inverse
-import json
+from Crypto.Util.number import getRandomRange, inverse
 
 import paillier
-from paillier import random_range_coprime
 from common import *
+from paillier import random_range_coprime
 
 # Connect to registrar
 reg = SecureSocket()
@@ -82,8 +81,9 @@ def login_voter(gui=False, user=None, password=None):
     try:
         check_logged_in()
         return "Already Logged In"
-    except:
+    except SignError:
         pass
+
     # Attempt to login as this voter
     args = None
 
@@ -141,6 +141,7 @@ def sign_vote(vote):
     except (ValueError, AssertionError):
         raise SignError()
 
+
 # adapted from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_knowledge board.py
 # Prove that client knows plaintext
@@ -166,6 +167,7 @@ def zkp_prove_knowledge(evote, pvote):
 
     result = board.recvline().strip()
     return result == 'PASS'
+
 
 # from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_in_set in board.py
@@ -201,9 +203,9 @@ def zkp_prove_valid(evote, pvote):
     chal_e = int(board.recvline().strip())
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
-    
+
     g_exp = (chal_e - sum(vote_es)) / evote.pub.n
-    
+
     # Inverse if negative
     if g_exp < 0:
         g_term = inverse(pow(evote.pub.g, abs(g_exp), evote.pub.n), evote.pub.n)
@@ -251,23 +253,22 @@ def cast_vote(gui=False, candidate=None):
     # Get a signature on our vote
     sig_vote = sign_vote(enc_vote)
 
+    # Send the vote information to the board to cast it
     board.send(make_cmd('vote', {
         'name': login_user,
         'passhash': login_pass,
         'vote': enc_vote.ctxt,
         'signature': sig_vote
     }))
-    
+
     # Check ZKPs
     try:
         print 'Hmmm, lookin\' kinda shady...'
         for attempt in xrange(ZKP_ROUNDS):
-            # print attempt
-            zkp_prove_knowledge(enc_vote, plain_vote)
+            zkp_prove_knowledge(enc_vote, plain_vote)  # Prove we know the ptxt value
         print 'Are You sure you\'re you?'
         for attempt in xrange(ZKP_ROUNDS):
-            # print attempt
-            zkp_prove_valid(enc_vote, plain_vote)
+            zkp_prove_valid(enc_vote, plain_vote)  # Prove the ptxt value is allowed
         print 'Huh, guess so.'
     except ValueError:
         return 'Vote not accepted'
@@ -280,6 +281,7 @@ def close_and_quit(gui=False):
     reg.close()
     board.close()
     exit()
+
 
 # Console interface
 if __name__ == '__main__':
