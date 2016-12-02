@@ -51,15 +51,15 @@ class BoardHandler(SecureCommandHandler):
     def validate_zkp_knowledge(self, vote, know_A=1000):
         # receive u
         know_u = long(self.input()) % pub.n_sq
-        print 'GOT DAT U'
+        # print 'GOT DAT U'
         # 3 rounds, A = 1000, p_valid = 1/(1000^3)
         # self.println
         know_e = getRandomRange(0, know_A)
         # send e
         self.println(know_e)
-        print 'SENT DAT E'
+        # print 'SENT DAT E'
         know_vw = self.input()
-        print 'GOT DAT VW'
+        # print 'GOT DAT VW'
         know_v, know_w = map(long, know_vw.strip().split(','))
         test = (pow(pub.g, know_v, pub.n_sq) * pow(vote, know_e, pub.n_sq) * pow(know_w, pub.n, pub.n_sq)) % pub.n_sq
 
@@ -85,12 +85,12 @@ class BoardHandler(SecureCommandHandler):
         vs = ev_dict["v"]
 
         for j in xrange(self.votegen.num_cands):
-            print 'j -', j
+            # print 'j -', j
             if pow(vs[j], pub.n, pub.n_sq) != (u[j] * pow(vote * inverse(pow(pub.g, vote_set[j], pub.n_sq), pub.n_sq), es[j], pub.n_sq)) % pub.n_sq:
-                print 'FAIL'
+                # print 'FAIL'
                 self.println("FAIL")
                 return False
-        print 'PASS'
+        # print 'PASS'
         self.println("PASS")
         return True
 
@@ -113,17 +113,17 @@ class BoardHandler(SecureCommandHandler):
         #         and self.validate_zkp_in_set(vote):
         if not self.validate_voter(name, password):
             return 'Vote not accepted USER'
-        print 'USER DONE'
+        # print 'USER DONE'
         if not self.validate_signature(vote, sig):
             return 'Vote not accepted SIG'
-        print 'SIG DONE'
+        # print 'SIG DONE'
         for attempt in xrange(10):
-            print attempt
+            # print attempt
             if not self.validate_zkp_knowledge(vote):
                 return 'Vote not accepted ZKP K'
-        print 'ZKPK DONE'
+        # print 'ZKPK DONE'
         for attempt in xrange(10):
-            print attempt
+            # print attempt
             if not self.validate_zkp_in_set(vote):
                 return 'Vote not accepted ZKP V'
         # Add the voter to the table if we haven't yet
