@@ -48,18 +48,15 @@ class BoardHandler(SecureCommandHandler):
         reg_sock.send(make_cmd('user', {'name': name, 'password': password}))
         return parse_res(reg_sock.recvline())  # TODO: assuming this is a bool, change if needed
 
+    # adapted from Practical Multi-Candidate Election System by Baudron
+    # corresponds to zkp_prove_knowledge in voter.py
     def validate_zkp_knowledge(self, vote, know_A=1000):
         # receive u
         know_u = long(self.input()) % pub.n_sq
-        # print 'GOT DAT U'
-        # 3 rounds, A = 1000, p_valid = 1/(1000^3)
-        # self.println
         know_e = getRandomRange(0, know_A)
         # send e
         self.println(know_e)
-        # print 'SENT DAT E'
         know_vw = self.input()
-        # print 'GOT DAT VW'
         know_v, know_w = map(long, know_vw.strip().split(','))
         test = (pow(pub.g, know_v, pub.n_sq) * pow(vote, know_e, pub.n_sq) * pow(know_w, pub.n, pub.n_sq)) % pub.n_sq
 
@@ -70,6 +67,8 @@ class BoardHandler(SecureCommandHandler):
         self.println("FAIL")
         return False
 
+    # from Practical Multi-Candidate Election System by Baudron
+    # corresponds to zkp_prove_valid in voter.py
     def validate_zkp_in_set(self, vote, A=1000):
         vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
         u_raw = self.input()
