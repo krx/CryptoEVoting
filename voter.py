@@ -206,6 +206,9 @@ def zkp_prove_valid(evote, pvote):
     chal_e = int(board.recvline().strip())
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
+    
+    print evote.pub.g
+    print chal_e-sum(vote_es)/evote.pub.n
 
     g_exp = (chal_e - sum(vote_es)) / evote.pub.n
     if g_exp < 0:
@@ -271,7 +274,7 @@ def cast_vote(gui=False, candidate=None):
         print attempt
         zkp_prove_valid(enc_vote, plain_vote)
 
-    print parse_res(board.recvline())
+    return parse_res(board.recvline())
 
 
 def close_and_quit(gui=False):
