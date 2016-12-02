@@ -6,8 +6,11 @@ import json
 import socket
 import hashlib
 from SocketServer import StreamRequestHandler
+import AESHelper
 
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 
 HOST = 'localhost'
 PORT_REGISTRAR = 9001
@@ -38,7 +41,7 @@ class CommandHandler(StreamRequestHandler):
         return self.rfile.readline().rstrip('\r\n')
 
     def salt(self, password):
-        return 'whyso' + password  + 'salty'
+        return 'whyso' + password + 'salty'
 
     def process_cmd(self):
         try:
@@ -74,27 +77,35 @@ class Socket(socket.socket):
         self.send('{}\n'.format(str(data)))
 
 
-class RSACommandHandler(CommandHandler):
+class SecureCommandHandler(CommandHandler):
     # Shared across all handlers in this process
     rsa_key = RSA.generate(2048)
 
     def __init__(self, request, client_address, server):
+        self.aes_iv = None
+        self.aes_key = None
         CommandHandler.__init__(self, request, client_address, server)
 
     def input(self, prompt=''):
         enc = CommandHandler.input(self, prompt)
-        return self.rsa_key.decrypt(base64.b64decode(enc))
+        return AESHelper.decrypt(base64.b64decode(enc), self.aes_key, self.aes_iv)
 
     def handle(self):
         # Send the public key
         self.println(json.dumps({'n': self.rsa_key.n, 'e': self.rsa_key.e}))
+
+        # Get the encrypted AES iv/key
+        aes_data = self.rsa_key.decrypt(base64.b64decode(CommandHandler.input(self)))
+        self.aes_iv, self.aes_key = aes_data[:AES.block_size], aes_data[AES.block_size:]
+
         CommandHandler.handle(self)
 
 
-class RSASocket(Socket):
+class SecureSocket(Socket):
     def __init__(self, family=socket.AF_INET, stype=socket.SOCK_STREAM, proto=0, _sock=None):
         Socket.__init__(self, family, stype, proto, _sock)
-        self.rsa_pub_key = None
+        self.aes_iv = get_random_bytes(AES.block_size)
+        self.aes_key = get_random_bytes(AES.block_size)
 
         # override the regular send with the encrypted version
         self.send = self.encsend
@@ -105,10 +116,13 @@ class RSASocket(Socket):
 
         # Receive and load the public key
         pub = json.loads(self.recvline())
-        self.rsa_pub_key = RSA.construct((long(pub['n']), long(pub['e'])))
+        rsa_pub_key = RSA.construct((long(pub['n']), long(pub['e'])))
+
+        # Send the encrypted AES iv/key
+        self.raw_send(base64.b64encode(rsa_pub_key.encrypt(self.aes_iv + self.aes_key, 32)[0]) + '\n')
 
     def encsend(self, data):
-        self.raw_send(base64.b64encode(self.rsa_pub_key.encrypt(data, 32)[0]) + '\n')
+        self.raw_send(base64.b64encode(AESHelper.encrypt(data, self.aes_key, self.aes_iv)) + '\n')
 
 
 # Command util functions

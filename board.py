@@ -19,7 +19,7 @@ candidates = ['dat boi', 'Shirls', 'RIPSEC']
 board = {}
 
 # Connect to the registrar
-reg_sock = RSASocket(socket.AF_INET, socket.SOCK_STREAM)
+reg_sock = SecureSocket(socket.AF_INET, socket.SOCK_STREAM)
 reg_sock.connect((HOST, PORT_REGISTRAR))
 
 # Get its key
@@ -28,7 +28,7 @@ reg_pub = parse_res(reg_sock.recvline())
 reg_pub = RSA.construct((long(reg_pub['n']), long(reg_pub['e'])))
 
 
-class BoardHandler(RSACommandHandler):
+class BoardHandler(SecureCommandHandler):
     reg_open = False
     votegen = VoteGenerator(len(candidates))
 

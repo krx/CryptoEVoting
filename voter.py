@@ -6,7 +6,7 @@ from hashlib import sha256
 from Crypto.Util.number import getRandomRange, GCD, inverse
 
 # Connect to registrar
-reg = RSASocket()
+reg = SecureSocket()
 reg.connect((HOST, PORT_REGISTRAR))
 
 # Get the registrar's public key
@@ -15,7 +15,7 @@ reg_key = parse_res(reg.recvline())
 reg_key = RSA.construct((long(reg_key['n']), long(reg_key['e'])))
 
 # Connect to board
-board = RSASocket()
+board = SecureSocket()
 board.connect((HOST, PORT_BOARD))
 
 # Get the board's public key
@@ -155,7 +155,7 @@ def zkp_prove_knowledge(evote, pvote):
 
 
 def zkp_prove_valid(evote, pvote):
-    # type: (paillier.EncryptedMessage), (long) -> None
+    # type: (paillier.EncryptedMessage, long) -> None
     vote_set = map(votegen.gen, xrange(votegen.num_cands))
     vote_i = vote_set.index(pvote)
     ro = getRandomRange(0, evote.pub.n)
@@ -167,10 +167,10 @@ def zkp_prove_valid(evote, pvote):
     for j in xrange(votegen.num_cands):
         if j == vote_i:
             vote_es.append(0)
-            vote_vs.append(0) 
+            vote_vs.append(0)
             vote_us.append((ro**evote.pub.n) % evote.pub.n_sq)
             continue
-        
+
         e_j = getRandomRange(0, evote.pub.n)
         votes_es.append(e_j)
 
@@ -178,7 +178,7 @@ def zkp_prove_valid(evote, pvote):
         while GCD(v_j, evote.pub.n) != 1:
             v_j = getRandomRange(0, evote.pub.n)
         vote_vs.append(v_j)
-        
+
         u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
         vote_us.append(u_j)
 
@@ -214,12 +214,12 @@ def cast_vote(gui=False, candidate=None):
         print '\nSelect who you want to vote for:'
         while True:
             try:
+                print candidate_menu
                 candidate = int(raw_input('> ')) - 1
                 assert 0 <= candidate < len(candidates)
                 break
             except (ValueError, AssertionError):
                 print 'Invalid choice'
-    
     plain_vote = votegen.gen(candidate)
     enc_vote = board_key.encrypt(plain_vote)
 
@@ -233,8 +233,6 @@ def close_and_quit(gui=False):
     reg.close()
     board.close()
     exit()
-
-
 
 if __name__ == '__main__':
     funcs = [

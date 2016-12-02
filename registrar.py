@@ -22,7 +22,7 @@ except:
 voterdb.close()
 
 #Instance per voter
-class VoterHandler(RSACommandHandler):
+class VoterHandler(SecureCommandHandler):
     
     #register all accepted commands
     def init_commands(self):
@@ -79,7 +79,7 @@ class VoterHandler(RSACommandHandler):
         #checks if user exists in table
         if self.sql("select name from voters where name=? and password=?", (name, password,)).fetchone() is not None:
             #return signature of vote
-            return str(pow(vote, reg_key.d, reg_key.n))
+            return pow(vote, reg_key.d, reg_key.n)
         else:
             return "Incorrect Login Details"
 
@@ -100,13 +100,15 @@ class VoterHandler(RSACommandHandler):
 
     #init method, sets up db connection and RSACommandHandler
     def setup(self):
-        RSACommandHandler.setup(self)
+        SecureCommandHandler.setup(self)
         self.voterdb = sqlite3.connect("voters.db")
         self.cursor = self.voterdb.cursor()
 
-#bc networking
-ThreadingTCPServer.allow_reuse_address = True
-server = ThreadingTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
+if __name__ == '__main__':
+    print 'Starting registrar server at {}:{}'.format(HOST, PORT_REGISTRAR)
+    #bc networking
+    ThreadingTCPServer.allow_reuse_address = True
+    server = ThreadingTCPServer((HOST, PORT_REGISTRAR), VoterHandler)
 
-#start that shizz
-server.serve_forever()
+    #start that shizz
+    server.serve_forever()
