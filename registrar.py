@@ -96,7 +96,7 @@ class VoterHandler(RSACommandHandler):
     
     #returns number of voters in table
     def user_count(self, args):
-        return self.sql("select count(*) from voters").fetchone()
+        return self.sql("select count(*) from voters").fetchone()[0]
 
     #init method, sets up db connection and RSACommandHandler
     def setup(self):
