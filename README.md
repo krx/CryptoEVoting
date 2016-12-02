@@ -38,6 +38,10 @@ For the GUI version, run:
 
 ## Usage
 
+### Edit Candidates
+
+Candidates are listed, one per line, in candidates.txt
+
 ### Registrar
 
 Once it's running, don't touch it, you don't need to
