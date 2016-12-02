@@ -11,23 +11,18 @@ class PublicKey:
         self.n = n
         self.n_sq = n * n
         self.g = n + 1  # Works because p, q are the same size
-
     def encrypt(self, ptxt):
         if not isinstance(ptxt, (int, long)):
             raise TypeError('Plaintext must be a number')
-
         r = random_range_coprime(2, self.n, self.n)
         ctxt = (pow(self.g, ptxt, self.n_sq) * pow(r, self.n, self.n_sq)) % self.n_sq
         return EncryptedMessage(self, ctxt, r)
-
     def __eq__(self, other):
         if isinstance(other, PublicKey):
             return self.n == other.n and self.g == other.g
         return False
-
     def __ne__(self, other):
         return not (self == other)
-
 
 class PrivateKey:
     def __init__(self, pub, p, q):
