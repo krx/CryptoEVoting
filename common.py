@@ -272,10 +272,11 @@ class VoteGenerator:
         Example:
             3 candidates, block_size=5
 
-            1. 110000010001100010 <-- example sum
-            2.   0000010001100010
-            3. 000001 00011 00010
-            4.      1     3     2
+            To separate the results, we take the following steps:
+                1. 110000010001100010 <-- example sum
+                2.   0000010001100010
+                3. 000001 00011 00010
+                4.      1     3     2
         Args:
             vote (long): Packed vote to unpack
 
