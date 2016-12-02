@@ -133,7 +133,7 @@ class BoardHandler(SecureCommandHandler):
                 return 'Vote not accepted ZKP V'
 
         # All checks passed
-        board[voterkey] = vote
+        board[voterkey] = paillier.EncryptedMessage(pub, vote)
         return 'Vote accepted!'
         # return 'Vote not accepted'
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     raw_input('--- BEGIN REGISTRATION PHASE ---')
 
     reg_sock.send(make_cmd('count'))
-    BoardHandler.votegen.block_size = parse_res(reg_sock.recvline())
+    BoardHandler.votegen.block_size = parse_res(reg_sock.recvline()).bit_length()
     BoardHandler.reg_open = False
     raw_input('--- BEGIN VOTING PHASE ---')
 
@@ -162,9 +162,6 @@ if __name__ == "__main__":
     if len(board.values()) == 0:
         print 'Nobody voted, RIP'
     else:
-        for v in board.values():
-            print bin(priv.decrypt(v))
-
         results = zip(candidates, BoardHandler.votegen.parse(priv.decrypt(sum(board.values()))))
 
         print 'RESULTS\n------------'

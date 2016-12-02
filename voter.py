@@ -230,7 +230,7 @@ def cast_vote(gui=False, candidate=None):
     # Update the vote generator if needed
     if votegen.block_size is None:
         reg.send(make_cmd('count'))
-        votegen.block_size = parse_res(reg.recvline())
+        votegen.block_size = parse_res(reg.recvline()).bit_length()
 
     # Make sure we're logged in
     check_logged_in()
