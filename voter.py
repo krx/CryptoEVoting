@@ -150,7 +150,7 @@ def zkp_prove_knowledge(evote, pvote, t=10):
         # choose s in Zn star
         know_s = random_range_coprime(0, evote.pub.n, evote.pub.n)
         # calc u
-        know_u = (evote.pub.g ** know_r * know_s ** evote.pub.n) % evote.pub.n_sq
+        know_u = (pow(evote.pub.g, know_r,evote.pub.n_sq) * pow(know_s, evote.pub.n, evote.pub.n_sq)) % evote.pub.n_sq
         # send u
         board.send(str(know_u))
 
@@ -159,7 +159,7 @@ def zkp_prove_knowledge(evote, pvote, t=10):
 
         # calc v, w
         know_v = (know_r - know_e * pvote) % evote.pub.n
-        know_w = (know_s * inverse(evote.rand_num, evote.pub.n) ** know_e) % evote.pub.n
+        know_w = (know_s * pow(inverse(evote.rand_num, evote.pub.n), know_e, evote.pub.n) % evote.pub.n
 
         board.send(str(know_v) + "," + str(know_w))
         result = board.recvline().strip()
@@ -183,7 +183,7 @@ def zkp_prove_valid(evote, pvote, t=10):
             if j == vote_i:
                 vote_es.append(0)
                 vote_vs.append(0)
-                vote_us.append((ro ** evote.pub.n) % evote.pub.n_sq)
+                vote_us.append(pow(ro, evote.pub.n, evote.pub.n_sq)
                 continue
 
             e_j = getRandomRange(0, evote.pub.n)
@@ -193,7 +193,7 @@ def zkp_prove_valid(evote, pvote, t=10):
 
             vote_vs.append(float(v_j))
 
-            u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
+            u_j = (pow(v_j, evote.pub.n, evote.pub.n_sq)*pow(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq), e_j, evote.pub.n_sq)) % evote.pub.n_sq
             vote_us.append(u_j)
 
         # send u's
@@ -205,7 +205,7 @@ def zkp_prove_valid(evote, pvote, t=10):
         e_i = (chal_e - sum(vote_es)) % evote.pub.n
         vote_es[vote_i] = e_i
 
-        v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/float(evote.pub.n))) % evote.pub.n
+        v_i = (ro*pow(evote.rand_num, e_i, evote.pub.n)*pow(evote.pub.g, ((chal_e - sum(vote_es))/float(evote.pub.n)),evote.pub.n)) % evote.pub.n
         vote_vs[vote_i] = v_i
 
         # send e,v
