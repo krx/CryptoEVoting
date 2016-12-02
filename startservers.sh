@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-python registrar.py &
+python2 registrar.py &
 sleep 1
-python board.py
+python2 board.py
