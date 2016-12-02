@@ -5,7 +5,7 @@
 Install the necessary dependencies with:
 
 ```bash
-🐧 pip install -r requirements.txt
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧pip install -r requirements.txt*:･ﾟ✧
 ```
 
 ### Start Servers
@@ -13,13 +13,13 @@ Install the necessary dependencies with:
 The registrar and board servers can be started by running:
 
 ```bash
-🐧 ./startservers.sh
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧./startservers.sh*:･ﾟ✧
 ```
 
 Or:
 
 ```bash
-🐧 python2 registrar.py & python2 board.py
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧python2 registrar.py & python2 board.py*:･ﾟ✧
 ```
 
 ### Start Voter Client
@@ -27,13 +27,13 @@ Or:
 There are two versions of the voter client. For a console version, run:
 
 ```bash
-🐧 python2 voter.py
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧python2 voter.py*:･ﾟ✧
 ```
 
 For the GUI version, run:
 
 ```bash
-🐧 python2 voterclient.py
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧python2 voterclient.py*:･ﾟ✧
 ```
 
 ## Usage
