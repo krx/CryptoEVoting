@@ -40,6 +40,8 @@ login_user = login_pass = None
 
 
 class LoginError(Exception): pass
+
+
 class SignError(Exception): pass
 
 
@@ -205,7 +207,13 @@ def zkp_prove_valid(evote, pvote):
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
 
-    v_i = (ro * pow(evote.rand_num, e_i, evote.pub.n) * inverse(pow(evote.pub.g, abs(((chal_e - sum(vote_es)) / evote.pub.n)), evote.pub.n), evote.pub.n)) % evote.pub.n
+    g_exp = (chal_e - sum(vote_es)) / evote.pub.n
+    if g_exp < 0:
+        g_term = inverse(pow(evote.pub.g, abs(g_exp), evote.pub.n), evote.pub.n)
+    else:
+        g_term = pow(evote.pub.g, g_exp, evote.pub.n)
+
+    v_i = (ro * pow(evote.rand_num, e_i, evote.pub.n) * g_term) % evote.pub.n
     vote_vs[vote_i] = v_i
     vote_es[vote_i] = e_i
 
