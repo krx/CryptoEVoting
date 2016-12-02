@@ -140,11 +140,15 @@ if __name__ == "__main__":
     raw_input('--- BEGIN VOTING PHASE ---')
 
     print '--- VOTING COMPLETE, COUNTING VOTES ---'
-    results = zip(candidates, BoardHandler.votegen.parse(priv.decrypt(sum(board.values()))))
+    if len(board.values()) == 0:
+        print 'Nobody voted, RIP'
+    else:
+        results = zip(candidates, BoardHandler.votegen.parse(priv.decrypt(sum(board.values()))))
 
-    print 'RESULTS\n------------'
-    for cand, result in results:
-        print '{}: {}'.format(cand, result)
+        print 'RESULTS\n------------'
+        for cand, result in results:
+            print '{}: {}'.format(cand, result)
 
+    # Disconnect from registrar
     reg_sock.send(make_cmd('quit'))
     reg_sock.close()

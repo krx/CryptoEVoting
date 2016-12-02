@@ -1,3 +1,7 @@
+"""
+Some helper function to make AES easier to use
+"""
+
 from Crypto.Cipher import AES
 
 

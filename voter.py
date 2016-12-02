@@ -182,13 +182,13 @@ def zkp_prove_valid(evote, pvote):
         while GCD(v_j, evote.pub.n) != 1:
             v_j = getRandomRange(0, evote.pub.n)
 
-        vote_vs.append(float(v_j)
+        vote_vs.append(float(v_j))
 
         u_j = (v_j**evote.pub.n*(evote.pub.g*inverse(evote.ctxt, evote.pub.n_sq))**e_j) % evote.pub.n_sq
         vote_us.append(u_j)
 
     # send u's
-    board.send(json.dumps(votes_us))
+    board.send(json.dumps(vote_us))
 
     # receive e
     chal_e = int(board.recvline().strip())
@@ -196,7 +196,7 @@ def zkp_prove_valid(evote, pvote):
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
     vote_es[vote_i] = e_i
 
-    v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/float(evote.pub.n)) % evote.pub.n
+    v_i = (ro*evote.rand_num**e_i*evote.pub.g**((chal_e - sum(vote_es))/float(evote.pub.n))) % evote.pub.n
     vote_vs[vote_i] = v_i
 
     # send e,v

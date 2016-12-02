@@ -193,7 +193,7 @@ class VoteGenerator:
             cindex (int): index of the candidate to vote for
 
         Returns:
-            (long): Generated vote for the candidate
+            long: Generated vote for the candidate
         """
         if self.block_size is None:
             raise ValueError('Block size is not set')
@@ -208,7 +208,7 @@ class VoteGenerator:
         Example:
             3 candidates, block_size=5
 
-            1. 110000010001100010
+            1. 110000010001100010 <-- example sum
             2.   0000010001100010
             3. 000001 00011 00010
             4.      1     3     2
@@ -216,7 +216,7 @@ class VoteGenerator:
             vote (long): Packed vote to unpack
 
         Returns:
-            (list): List of the results for every candidate
+            list: List of the results for every candidate
         """
         if self.block_size is None:
             raise ValueError('Block size is not set')
