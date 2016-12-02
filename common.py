@@ -4,6 +4,7 @@ Common variables/utilities shared between services
 import base64
 import json
 import socket
+import hashlib
 from SocketServer import StreamRequestHandler
 
 from Crypto.PublicKey import RSA
@@ -36,11 +37,16 @@ class CommandHandler(StreamRequestHandler):
         self.wfile.write(prompt)
         return self.rfile.readline().rstrip('\r\n')
 
+    def salt(self, password):
+        return 'whyso' + password  + 'salty'
+
     def process_cmd(self):
         try:
             cmd = json.loads(self.input())
             print cmd
             assert 'command' in cmd and 'args' in cmd
+            if 'password' in cmd['args']:
+                cmd['args']['password'] = hashlib.sha256(self.salt(cmd['args']['password'])).hexdigest()
             res = self.commands[cmd['command']](cmd['args'])
             self.println(make_res(res))
         except:

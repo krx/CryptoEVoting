@@ -30,7 +30,6 @@ reg_pub = RSA.construct((long(reg_pub['n']), long(reg_pub['e'])))
 
 class BoardHandler(RSACommandHandler):
     reg_open = False
-    votegen = VoteGenerator(len(candidates))
 
     def init_commands(self):
         self.add_cmd('regopen', lambda _: self.reg_open)  # Is registration currently allowed?
@@ -65,7 +64,7 @@ class BoardHandler(RSACommandHandler):
         return False
 
     def validate_zkp_in_set(self, vote):
-        vote_set = map(self.votegen.gen, xrange(self.votegen.num_cands))
+        pass
 
     def attempt_vote(self, args):
         if self.reg_open:
@@ -118,8 +117,6 @@ if __name__ == "__main__":
     BoardHandler.reg_open = True
     raw_input('--- BEGIN REGISTRATION PHASE ---')
 
-    reg_sock.send(make_cmd('count'))
-    BoardHandler.votegen.block_size = parse_res(reg_sock.recvline())
     BoardHandler.reg_open = False
     raw_input('--- BEGIN VOTING PHASE ---')
 

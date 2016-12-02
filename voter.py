@@ -46,6 +46,14 @@ def check_logged_in():
 
 def register_voter():
     global login_user, login_pass
+
+    try:
+        check_logged_in()
+        print 'Already Logged In'
+        return
+    except:
+        pass
+
     # We can only register in the registration phase
     board.send(make_cmd('regopen'))
     if not parse_res(board.recvline()):
@@ -73,16 +81,22 @@ def login_voter():
     if parse_res(reg.recvline()):
         login_user = args['name']
         login_pass = args['password']
+        print 'Successfully logged in as \'' + args['name'] + '\''
+    else:
+        print 'Could not login'
 
 
 def logout_voter():
+    check_logged_in()
     global login_user, login_pass
     login_user = login_pass = None
-
-
+    print 'Logged out'    
+   
 def sign_vote(vote):
     # type: (paillier.EncryptedMessage) -> long
     # Blind and send our encrypted vote
+    
+    check_logged_in()
     blind_r = getRandomRange(2, reg_key.n)
     blinded_vote = (vote.ctxt * pow(blind_r, reg_key.e, reg_key.n)) % reg_key.n
     reg.send(make_cmd('sign', {
@@ -174,6 +188,7 @@ def close_and_quit():
     exit()
 
 
+
 if __name__ == '__main__':
     funcs = [
         register_voter,
@@ -190,14 +205,22 @@ if __name__ == '__main__':
             "5) Quit")
 
     while True:
+        print '[----------------------------]'
+        try:
+            check_logged_in()
+            print 'Logged in as: ' + login_user + '\n'
+        except:
+            pass
         print menu
-
+        print '[----------------------------]'
         try:
             choice = int(raw_input('> ')) - 1
             assert 0 <= choice < len(funcs)
         except (ValueError, AssertionError):
             print 'Invalid choice'
             continue
+        except KeyboardInterrupt:
+            close_and_quit()
 
         try:
             funcs[choice]()
