@@ -142,9 +142,9 @@ def cast_vote():
         return
 
     # Update the vote generator if needed
-    if vgen.block_size is None:
+    if votegen.block_size is None:
         reg.send(make_cmd('count'))
-        vgen.block_size = parse_res(reg.recvline())
+        votegen.block_size = parse_res(reg.recvline())
 
     # Make sure we're logged in
     check_logged_in()
@@ -159,9 +159,11 @@ def cast_vote():
         except (ValueError, AssertionError):
             print 'Invalid choice'
 
+    plain_vote = votegen.gen(candidate)
+    enc_vote = board_key.encrypt(plain_vote)
 
     # Get a signature on our vote
-    # sigvote = sign_vote()
+    sig_vote = sign_vote(enc_vote)
 
 
 def close_and_quit():
