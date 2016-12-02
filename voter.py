@@ -39,8 +39,6 @@ login_user = login_pass = None
 
 
 class LoginError(Exception): pass
-
-
 class SignError(Exception): pass
 
 
@@ -52,7 +50,7 @@ def check_logged_in():
 
 def register_voter(gui=False, user=None, password=None):
     global login_user, login_pass
-
+    # Can't register if already logged in
     try:
         check_logged_in()
         return 'Already Logged In'
@@ -143,8 +141,12 @@ def sign_vote(vote):
     except (ValueError, AssertionError):
         raise SignError()
 
+<<<<<<< Updated upstream
 # adapted from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_knowledge board.py
+=======
+# Prove that client knows plaintext
+>>>>>>> Stashed changes
 def zkp_prove_knowledge(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> bool
     # choose r in Zn
@@ -168,8 +170,12 @@ def zkp_prove_knowledge(evote, pvote):
     result = board.recvline().strip()
     return result == 'PASS'
 
+<<<<<<< Updated upstream
 # from Practical Multi-Candidate Election System by Baudron
 # corresponds to validate_zkp_in_set in board.py
+=======
+# Prove message is valid vote
+>>>>>>> Stashed changes
 def zkp_prove_valid(evote, pvote):
     # type: (paillier.EncryptedMessage, long) -> bool
     vote_set = map(votegen.gen, xrange(votegen.num_cands))
@@ -202,10 +208,9 @@ def zkp_prove_valid(evote, pvote):
 
     e_i = (chal_e - sum(vote_es)) % evote.pub.n
     
-    # print evote.pub.g
-    # print chal_e-sum(vote_es)/evote.pub.n
-
     g_exp = (chal_e - sum(vote_es)) / evote.pub.n
+    
+    # Inverse if negative
     if g_exp < 0:
         g_term = inverse(pow(evote.pub.g, abs(g_exp), evote.pub.n), evote.pub.n)
     else:
@@ -258,7 +263,8 @@ def cast_vote(gui=False, candidate=None):
         'vote': enc_vote.ctxt,
         'signature': sig_vote
     }))
-
+    
+    # Check ZKPs
     try:
         print 'Hmmm, lookin\' kinda shady...'
         for attempt in xrange(ZKP_ROUNDS):
@@ -281,7 +287,7 @@ def close_and_quit(gui=False):
     board.close()
     exit()
 
-
+# Console interface
 if __name__ == '__main__':
     funcs = [
         register_voter,
@@ -297,6 +303,7 @@ if __name__ == '__main__':
             "4) Vote\n"
             "5) Quit")
 
+    # Dat input loop
     while True:
         print '[----------------------------]'
         try:

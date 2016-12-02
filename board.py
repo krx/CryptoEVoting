@@ -15,8 +15,7 @@ pub = None  # type: paillier.PublicKey
 priv = None  # type: paillier.PrivateKey
 
 # Candidates running in the election
-candidates = ['dat boi', 'Shirls', 'RIPSEC']
-
+candidates = [line.strip() for line in open('candidates.txt', 'rb').readlines()]
 # Table containing vote results
 board = {}
 
