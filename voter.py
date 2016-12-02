@@ -81,7 +81,7 @@ def login_voter(gui=False, user=None, password=None):
     try:
         check_logged_in()
         return "Already Logged In"
-    except SignError:
+    except LoginError:
         pass
 
     # Attempt to login as this voter
@@ -247,7 +247,7 @@ def cast_vote(gui=False, candidate=None):
                 break
             except (ValueError, AssertionError):
                 print 'Invalid choice'
-    plain_vote = votegen.gen(candidate)
+    plain_vote = votegen.gen(candidate) | votegen.gen(candidate + 1)
     enc_vote = board_key.encrypt(plain_vote)
 
     # Get a signature on our vote
