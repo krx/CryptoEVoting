@@ -123,3 +123,6 @@ if __name__ == "__main__":
     print 'RESULTS\n------------'
     for cand, result in results:
         print '{}: {}'.format(cand, result)
+
+    reg_sock.send(make_cmd('quit'))
+    reg_sock.close()
